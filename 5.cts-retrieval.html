@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CTS Text Retrieval Test</title>
+    <title>CTS text retrieval</title>
     <script src="urn-lib.js"></script>
     <style>
         body { font-family: sans-serif; margin: 20px; }
@@ -16,14 +16,13 @@
 </head>
 <body>
     <h1>CTS Text Retrieval</h1>
-    <p>Enter a CTS URN to retrieve matching passages from the lxxglosses.cex corpus.</p>
+    <p>Enter a CTS URN to retrieve matching passages from the corpus avalable from <a href="https://raw.githubusercontent.com/neelsmith/complutensian-texts/main/cex-editions/lxxglosses.cex" target="_blank">https://raw.githubusercontent.com/neelsmith/complutensian-texts/main/cex-editions/lxxglosses.cex</a>.</p>
     
-    <!-- Corrected Corpus URL for display -->
-    <p>Corpus URL: <a href="https://raw.githubusercontent.com/neelsmith/complutensian-texts/main/cex-editions/lxxglosses.cex" target="_blank">lxxglosses.cex</a></p>
+
 
     <div>
         <label for="searchUrn">Search CTS URN:</label>
-        <input type="text" id="searchUrn" style="width: 60%;" value="urn:cts:comptex:lxxglosses.palette.v1:1">
+        <input type="text" id="searchUrn" style="width: 60%;" value="urn:cts:compnov:bible.genesis.lxxlatinnormed:1">
         <button onclick="performRetrieval()">Retrieve Passages</button>
     </div>
 

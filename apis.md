@@ -33,10 +33,10 @@ Include `urn-lib.js` in your HTML file:
 </script>
 ```
 
-Via jsDelivr (once published to GitHub):
+Via jsDelivr:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/YOUR_REPOSITORY_NAME@VERSION_OR_BRANCH/urn-lib.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/neelsmith/urns-lib/urn-lib.js"></script>
 ```
 
 ### Node.js (CommonJS)
@@ -267,5 +267,5 @@ Matching logic:
     *   `header` (String[]): An array of column names from the corpus header.
     *   `rows` (Array of String[]): An array of matching data rows, where each row is an array of its string values.
     *   `error` (String | null): An error message if an issue occurred (e.g., invalid search URN, no 'urn' column), otherwise `null`.
-```
+
 
