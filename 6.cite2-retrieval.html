@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CITE2 Object Retrieval Test</title>
+    <script src="urn-lib.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #resultsTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #resultsTable th, #resultsTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #resultsTable th { background-color: #f2f2f2; }
+        .error { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .status-message { margin-top:10px; padding: 5px; border: 1px solid #eee; }
+        textarea { width: 100%; min-height: 150px; margin-bottom:10px; font-family: monospace;}
+    </style>
+</head>
+<body>
+    <h1>CITE2 Object Retrieval</h1>
+    <p>Enter a CITE2 URN to retrieve matching records from the sample dataset below.</p>
+
+    <div>
+        <label for="corpusDataCite2">Corpus Data (Pipe-Delimited):</label><br>
+        <textarea id="corpusDataCite2">
+sequence|image|urn|rv|label
+2|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f001r|urn:cite2:citebl:burney86pages.v1:1r|recto|British Library, Burney 86, folio 1 recto
+3|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f001v|urn:cite2:citebl:burney86pages.v1:1v|verso|British Library, Burney 86, folio 1 verso
+4|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f002r|urn:cite2:citebl:burney86pages.v1:2r|recto|British Library, Burney 86, folio 2 recto
+5|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f002v|urn:cite2:citebl:burney86pages.v1:2v|verso|British Library, Burney 86, folio 2 verso
+6|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f003r|urn:cite2:citebl:burney86pages.v1:3r|recto|British Library, Burney 86, folio 3 recto
+7|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f003v|urn:cite2:citebl:burney86pages.v1:3v|verso|British Library, Burney 86, folio 3 verso
+8|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f004r|urn:cite2:citebl:burney86pages.v1:4r|recto|British Library, Burney 86, folio 4 recto
+9|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f004v|urn:cite2:citebl:burney86pages.v1:4v|verso|British Library, Burney 86, folio 4 verso
+        </textarea>
+    </div>
+
+    <div>
+        <label for="searchCite2Urn">Search CITE2 URN:</label>
+        <input type="text" id="searchCite2Urn" style="width: 60%;" value="urn:cite2:citebl:burney86pages:1r-2v">
+        <button onclick="performCite2Retrieval()">Retrieve Objects</button>
+    </div>
+
+    <div id="statusCite2" class="status-message"></div>
+    <div id="resultsContainerCite2">
+        <table id="resultsTableCite2" style="display:none;">
+            <thead id="resultsTheadCite2"></thead>
+            <tbody id="resultsBodyCite2"></tbody>
+        </table>
+    </div>
+
+    <script>
+        function performCite2Retrieval() {
+            const searchUrnStr = document.getElementById('searchCite2Urn').value;
+            const corpusDataStr = document.getElementById('corpusDataCite2').value;
+            const statusEl = document.getElementById('statusCite2');
+            const resultsTable = document.getElementById('resultsTableCite2');
+            const resultsThead = document.getElementById('resultsTheadCite2');
+            const resultsBody = document.getElementById('resultsBodyCite2');
+
+            resultsThead.innerHTML = '';
+            resultsBody.innerHTML = ''; 
+            resultsTable.style.display = 'none';
+            statusEl.textContent = '';
+
+            if (!URNTools.isValidCite2Urn(searchUrnStr)) {
+                statusEl.innerHTML = `<span class="error">Invalid search URN. Please enter a valid CITE2 URN.</span>`;
+                return;
+            }
+            
+            statusEl.innerHTML = '<span class="info">Searching...</span>';
+            try {
+                const result = URNTools.retrieveCite2Objects(searchUrnStr, corpusDataStr);
+                
+                if (result.error) {
+                    statusEl.innerHTML = `<span class="error">Error: ${escapeHtml(result.error)}</span>`;
+                    return;
+                }
+
+                if (result.rows.length > 0) {
+                    // Populate header
+                    const headerRow = resultsThead.insertRow();
+                    result.header.forEach(headerText => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText;
+                        headerRow.appendChild(th);
+                    });
+
+                    // Populate data rows
+                    result.rows.forEach(rowDataArray => {
+                        const row = resultsBody.insertRow();
+                        rowDataArray.forEach(cellData => {
+                            const cell = row.insertCell();
+                            cell.textContent = cellData;
+                        });
+                    });
+                    resultsTable.style.display = 'table';
+                    statusEl.innerHTML = `<span class="info">Found ${result.rows.length} matching object(s).</span>`;
+                } else {
+                    statusEl.innerHTML = '<span class="info">No matching objects found.</span>';
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span class="error">Error during retrieval: ${escapeHtml(e.message)}</span>`;
+                console.error(e);
+            }
+        }
+        
+        function escapeHtml(unsafe) {
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        // Perform initial search on load with default values
+        document.addEventListener('DOMContentLoaded', performCite2Retrieval);
+    </script>
+</body>
+</html>

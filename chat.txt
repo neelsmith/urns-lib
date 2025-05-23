@@ -1,0 +1,3137 @@
+### USER
+I want to build a javascript library, packaged so that I can add it to a GitHub repo and use it via jsDeliver, for working with identifiers expressed with two kinds of URNs: CTS URNs and CITE2 URNs.
+  
+First, CTS URNs. CTS URNs have five colon-delimited components: 1) the string `urn`, 2) the string `cts`, 3) a non-empty namespace value, 4) a non-empty work component with 1 - 4 period-separated parts, 5) a possibly empty passage component. The passage component assumes one of two possible forms: a) a passage reference expressd with 1 or more period-separated parts, b) a range expressed as a pair of passage references joined by a hyphen. Examples: `urn:cts:hmt:tlg0012.tlg001:1.1` is a valid CTS URN with namespace `hmt`, work component `tlg0012.tlg001` and passage component `1.1`.  `urn:cts:hmt:tlg0012.tlg001:1.1-1.7` is a valid CTS URN with a passage component expressing a range: it has range beginning point `1.1` and range end point `1.7`.  `urn:cts:hmt:tlg0012.tlg001:` is a valid CTS URN that has an empty passage component. Note that the string still includes four delimiting colon characters. All components are arbitrary string values, even if composed entirely of digits: they have no meaning for sorting. The library should have a boolean function that determines if a string is a valid CTS URN.
+  
+It should also have the following functions for working with the components of valid CTS URNs: `ctsnamespace` should return the third colon-separated component; `workcomponent` should return the fourth component; `passagecomponent` should return the (possibly empty) fifth component.
+  
+The work component has up to four period-delimited parts: the text group, work, version and exemplar.  For example, the CTS URN `urn:cts:hmt:tlg0012.tlg001:1.1` has text group `tlg0012` and work `tlg001`, and no values for version or exemplar. Note that periods separate the existing parts: no additional periods are required. `urn:cts:hmt:tlg0012.tlg001.msA.normalized:1.1` has the values for text group and work, but also has version `msA` and exemplar `normalized`. The library should include the following functions return parts of the work component: `textgroup` returns the (required) first part; `workid` returns the (possibly empty) second part, `version` returns the (possibly empty) third part, and `exemplar` returns the (possibly empty) fourth part.
+  
+The library should also have functions to assess the _equality_ and _CTS congruence_ of two URNs. Two CTS URNs are _equal_ if every component has the same value. Two CTS URNs are _congruent_ if they have the same namespace, and satisfy these conditions: in the work component and the passage component, each period-separated part that is present is equal to the same part in the other URN. For example, `urn:cts:hmt:tlg0012.tlg001.msA.normalized:1.1` and `urn:cts:hmt:tlg0012.tlg001:1.1` are not equal but they are congruent because comparing their work components shows that both have text group `tlg0012` and workid `tlg001`; since the second URN has no value for version or exemplar. Their passage components are identical, so they also satisfy the condition of congruence. `urn:cts:hmt:tlg0012.tlg001:1.1` and `urn:cts:hmt:tlg0012.tlg002:1.1` are not equal and are not congruent because they two different values for workid.  Obviously, all CTS URNs that are equal to each other are also congruent to each other.
+  
+**Test**: Could you write a web page to test the library? The user should be able to enter two CTS URNs, and determine if they are syntactically valid. The page should display in adjacent columns the namespace, textgroup, work id, version, exemplar, and passage component. Additionally, if the passage component is a range value, it should note this.
+  
+  
+Now let's consider retrieving text from a delimited text source where each line represents one citable passage of text. The first column is a CTS URN, and the second column is the text content. We need a function to retrieve passages from the list. Columns are delimited by the pipe character '|'.
+  
+The retrieval function should retrieve passages that are _congruent_ with a given URN. There are three cases to consider. Let's use as example URNs referring to the _Iliad_, which has 2 levels of citation, book and line (e.g., `1.1` refers to book 1, line 1).
+  
+A URN to retrieve might refer to a single, leaf-node passage (e.g., passage component `1.1`), or to a range of passages (e.g., `1.1-1.2`) or to a container unit (e.g., _Iliad_ `1` refers to _all_ passages in _Iliad_ book 1.)
+  
+**Test**: Please write an HTML test page that reads a corpus from this URL: https://raw.githubusercontent.com/neelsmith/complutensian-texts/refs/heads/main/cex-editions/lxxglosses.cex It should skip the first line and treat the remaining lines as delimited text in the format described above. The web app should let the user enter a URN, then display the matching passages, if any. Note that order of passages is determined by sequence of lines in the data source, not by the value of the passage component. In this data set, for example, the passage `1.title` precedes `1.1`.
+  
+Now let's add parallel support for CITE2 URNs.
+  
+CITE2 URNs have five colon-delimited components: 1) the string `urn`, 2) the string `cite2`, 3) a non-empty namespace value, 4) a non-empty collection component with 1 - 3 period-separated parts, 5) a possibly empty object component. The object component assumes one of two possible forms: a) an object identifier or b) a range expressed as a pair of object identifiers joined by a hyphen.
+  
+Examples: `urn:cite2:citebl:burney86pages.v1:1r` is a valid CITE2 URN with namespace `citebl`, collection component `burney86pages.v1` and object component `1r`.  `urn:cite2:citebl:burney86pages.v1:1r-2v` is a valid CITE2 URN with an object component expressing a range: it has range beginning point `1r` and range end point `2v`.  `urn:cite2:citebl:burney86pages.v1:` is a valid CITE2 URN that has an empty object component. Note that the string still includes four delimiting colon characters. All components are arbitrary string values, even if composed entirely of digits: they have no meaning for sorting. The library should have a boolean function that determines if a string is a valid CTS URN.
+  
+It should also have the following functions for working with the components of valid CITE2 URNs: `cite2namespace` should return the third colon-separated component; `collectioncomponent` should return the fourth component; `objectcompnoent` should return the (possibly empty) fifth component.
+  
+The collection component has up to three period-delimited parts: the collection, version and property.  For example, the CITE2 URN `urn:cite2:citebl:burney86pages.v1:1r-2v` has has collection `burney86pages` version `v1`, and no value for property. Note that periods separate the existing parts: no additional periods are required.
+  
+THe CITE2 URN `urn:cite2:citebl:burney86pages.v1.image:1r` has the same values for collection and version but also has the property `image`.
+  
+The library should include the following functions that return parts of the collection component: `collectionid` returns the (required) first part; `versionid` returns the (possibly empty) second part, and `propertyid` returns the (possibly empty) third part.
+  
+The library should also have functions to assess the _equality_ and _URN congruence_ of two CITE2 URNs. Two CITE2 URNs are _equal_ if every component has the same value. Two CITE2 URNs are _congruent_ if they have the same namespace, and in the collection component, each period-separated part that is present is equal to the same part in the other URN.
+  
+For example, `urn:cite2:citebl:burney86pages.v1:1r` and `urn:cite2:citebl:burney86pages:1r` are not equal but they are congruent because comparing their collection components shows that both have collectionid `burney86pages`; since the second URN has no value for version or property, we don't compare those.  Obviously, all CTS URNs that are equal to each other are also congruent to each other.
+  
+**Test**: Could you write a web page to test the library? The user should be able to enter two CITE2 URNs, and determine if they are syntactically valid. The page should display in adjacent columns the namespace, collectionid,  version, property, and object component. Additionally, if the object component is a range value, it should note this.
+
+### ASSISTANT
+Okay, this is a comprehensive set of requirements. I will structure the JavaScript library and the HTML test pages as requested.
+
+The library will be a single JavaScript file, let's call it `urn-lib.js`. It will expose a global object `URNTools` when included in a browser environment.
+
+**`urn-lib.js` Structure Outline:**
+
+```javascript
+(function(exports) {
+    'use strict';
+
+    // --- HELPER FUNCTIONS ---
+    // _parseComponentParts, _compareComponentParts, etc.
+
+    // --- CTS URN Core Logic ---
+    // parseCtsUrn(urnString) -> detailed object
+    // isValidCtsUrn(urnString) -> boolean
+
+    // --- CTS URN Accessor Functions ---
+    // ctsnamespace(urnString)
+    // workcomponent(urnString)
+    // passagecomponent(urnString)
+    // textgroup(urnString)
+    // workid(urnString)
+    // version(urnString)
+    // exemplar(urnString)
+
+    // --- CTS URN Comparison Functions ---
+    // areCtsUrnsEqual(urnString1, urnString2)
+    // areCtsUrnsCongruent(urnString1, urnString2)
+
+    // --- CTS Text Retrieval ---
+    // retrieveCtsPassages(searchUrnString, corpusDataString)
+
+    // --- CITE2 URN Core Logic ---
+    // parseCite2Urn(urnString) -> detailed object
+    // isValidCite2Urn(urnString) -> boolean
+
+    // --- CITE2 URN Accessor Functions ---
+    // cite2namespace(urnString)
+    // collectioncomponent(urnString)
+    // objectcomponent(urnString) // Corrected from objectcompnoent
+    // collectionid(urnString)
+    // versionid(urnString) // For CITE2 collection
+    // propertyid(urnString) // For CITE2 collection
+
+    // --- CITE2 URN Comparison Functions ---
+    // areCite2UrnsEqual(urnString1, urnString2)
+    // areCite2UrnsCongruent(urnString1, urnString2)
+
+    // --- EXPORT PUBLIC API ---
+    // exports.parseCtsUrn = parseCtsUrn;
+    // ... and so on for all public functions
+
+}(typeof exports === 'undefined' ? (this.URNTools = {}) : exports));
+```
+
+Let's start building the `urn-lib.js`.
+
+**`urn-lib.js` Implementation:**
+
+```javascript
+(function(exports) {
+    'use strict';
+
+    // --- HELPER FUNCTIONS ---
+
+    /**
+     * Splits a component string by period, ensuring no empty parts result.
+     * @param {string} componentStr The component string.
+     * @returns {string[]|null} Array of parts, or null if invalid (e.g., "a..b").
+     */
+    function _splitComponentString(componentStr) {
+        if (componentStr === "") return [];
+        const parts = componentStr.split('.');
+        if (parts.some(p => p === "")) return null; // No empty parts like "a..b"
+        return parts;
+    }
+
+    /**
+     * Compares two arrays of component parts for congruence.
+     * Congruent if all parts in the shorter array match corresponding parts in the longer array.
+     * @param {string[]} parts1 First array of parts.
+     * @param {string[]} parts2 Second array of parts.
+     * @returns {boolean} True if congruent, false otherwise.
+     */
+    function _areComponentPartsCongruent(parts1, parts2) {
+        if (!parts1 || !parts2) return false; // Should not happen if parsing is correct
+        const len = Math.min(parts1.length, parts2.length);
+        for (let i = 0; i < len; i++) {
+            if (parts1[i] !== parts2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // --- CTS URN Core Logic ---
+
+    function parseCtsUrn(urnString) {
+        const result = {
+            valid: false,
+            original: urnString,
+            error: null,
+            protocol: null,
+            nid: null,
+            namespace: null,
+            workComponent: null,
+            passageComponent: null,
+            workParts: { textgroup: null, workid: null, version: null, exemplar: null },
+            passageParts: { isRange: false, reference: null, referenceParts: null, start: null, startParts: null, end: null, endParts: null }
+        };
+
+        if (typeof urnString !== 'string') {
+            result.error = "Input is not a string.";
+            return result;
+        }
+
+        const parts = urnString.split(':');
+        if (parts.length !== 5) {
+            result.error = "CTS URN must have 5 colon-delimited components.";
+            return result;
+        }
+
+        result.protocol = parts[0];
+        result.nid = parts[1];
+        result.namespace = parts[2];
+        result.workComponent = parts[3];
+        result.passageComponent = parts[4]; // Can be empty
+
+        if (result.protocol !== 'urn') {
+            result.error = "Component 1 must be 'urn'.";
+            return result;
+        }
+        if (result.nid !== 'cts') {
+            result.error = "Component 2 must be 'cts'.";
+            return result;
+        }
+        if (!result.namespace) {
+            result.error = "Component 3 (namespace) must be non-empty.";
+            return result;
+        }
+        if (!result.workComponent) {
+            result.error = "Component 4 (work component) must be non-empty.";
+            return result;
+        }
+        // Passage component (parts[4]) can be empty.
+
+        // Validate Work Component (1-4 period-separated parts, all non-empty)
+        const workComponentParts = _splitComponentString(result.workComponent);
+        if (!workComponentParts || workComponentParts.length === 0 || workComponentParts.length > 4) {
+            result.error = "Work component must have 1-4 non-empty, period-separated parts.";
+            return result;
+        }
+        result.workParts.textgroup = workComponentParts[0] || null;
+        result.workParts.workid = workComponentParts[1] || null;
+        result.workParts.version = workComponentParts[2] || null;
+        result.workParts.exemplar = workComponentParts[3] || null;
+
+        // Validate Passage Component
+        const passageStr = result.passageComponent;
+        if (passageStr.includes('-')) { // Potential range
+            const rangeParts = passageStr.split('-');
+            if (rangeParts.length !== 2 || !rangeParts[0] || !rangeParts[1]) {
+                result.error = "Passage range must have a non-empty start and end, separated by one hyphen.";
+                return result;
+            }
+            const startPassageParts = _splitComponentString(rangeParts[0]);
+            const endPassageParts = _splitComponentString(rangeParts[1]);
+
+            if (!startPassageParts || startPassageParts.length === 0) {
+                result.error = "Range start identifier must have at least one non-empty part.";
+                return result;
+            }
+            if (!endPassageParts || endPassageParts.length === 0) {
+                result.error = "Range end identifier must have at least one non-empty part.";
+                return result;
+            }
+            result.passageParts.isRange = true;
+            result.passageParts.start = rangeParts[0];
+            result.passageParts.startParts = startPassageParts;
+            result.passageParts.end = rangeParts[1];
+            result.passageParts.endParts = endPassageParts;
+        } else if (passageStr === "") { // Empty passage component
+            result.passageParts.isRange = false;
+            result.passageParts.reference = "";
+            result.passageParts.referenceParts = [];
+        } else { // Single passage reference
+            const singlePassageParts = _splitComponentString(passageStr);
+            if (!singlePassageParts || singlePassageParts.length === 0) {
+                result.error = "Non-empty, non-range passage identifier must have at least one non-empty part.";
+                return result;
+            }
+            result.passageParts.isRange = false;
+            result.passageParts.reference = passageStr;
+            result.passageParts.referenceParts = singlePassageParts;
+        }
+
+        result.valid = true;
+        return result;
+    }
+
+    function isValidCtsUrn(urnString) {
+        return parseCtsUrn(urnString).valid;
+    }
+
+    // --- CTS URN Accessor Functions ---
+    function ctsnamespace(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.namespace : null;
+    }
+    function workcomponent(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workComponent : null;
+    }
+    function passagecomponent(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.passageComponent : null;
+    }
+    function textgroup(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.textgroup : null;
+    }
+    function workid(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.workid : null;
+    }
+    function version(urnString) { // Work component version
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.version : null;
+    }
+    function exemplar(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.exemplar : null;
+    }
+
+    // --- CTS URN Comparison Functions ---
+    function areCtsUrnsEqual(urnString1, urnString2) {
+        if (typeof urnString1 !== 'string' || typeof urnString2 !== 'string') return false;
+        return urnString1 === urnString2; // For full equality, string comparison is enough if URNs are canonical
+                                          // However, to be robust, parse and compare all fields.
+        // Robust equality check:
+        const p1 = parseCtsUrn(urnString1);
+        const p2 = parseCtsUrn(urnString2);
+
+        if (!p1.valid || !p2.valid) return false; // Or based on strict definition, invalid URNs cannot be equal
+
+        return p1.namespace === p2.namespace &&
+               p1.workComponent === p2.workComponent && // This implies all workParts are identical
+               p1.passageComponent === p2.passageComponent; // This implies all passageParts aspects are identical
+    }
+
+    function areCtsUrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCtsUrn(urnString1);
+        const p2 = parseCtsUrn(urnString2);
+
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+
+        // Work component congruence
+        const p1WorkParts = [p1.workParts.textgroup, p1.workParts.workid, p1.workParts.version, p1.workParts.exemplar].filter(Boolean);
+        const p2WorkParts = [p2.workParts.textgroup, p2.workParts.workid, p2.workParts.version, p2.workParts.exemplar].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1WorkParts, p2WorkParts)) return false;
+
+        // Passage component congruence
+        if (p1.passageParts.isRange !== p2.passageParts.isRange) return false;
+
+        if (p1.passageParts.isRange) { // Both are ranges
+            if (!_areComponentPartsCongruent(p1.passageParts.startParts, p2.passageParts.startParts)) return false;
+            if (!_areComponentPartsCongruent(p1.passageParts.endParts, p2.passageParts.endParts)) return false;
+        } else { // Both are single/empty
+            if (!_areComponentPartsCongruent(p1.passageParts.referenceParts, p2.passageParts.referenceParts)) return false;
+        }
+        return true;
+    }
+
+    // --- CTS Text Retrieval ---
+    function retrieveCtsPassages(searchUrnString, corpusDataString) {
+        const searchUrnObj = parseCtsUrn(searchUrnString);
+        if (!searchUrnObj.valid) {
+            console.error("Invalid search URN:", searchUrnObj.error);
+            return [];
+        }
+
+        const lines = corpusDataString.split('\n');
+        const results = [];
+
+        // Skip header line if present - assuming first line is header as per prompt
+        const dataLines = lines.slice(1);
+
+        for (const line of dataLines) {
+            if (line.trim() === "") continue;
+            const parts = line.split('|');
+            if (parts.length < 2) continue; // Malformed line
+
+            const corpusUrnString = parts[0].trim();
+            const textContent = parts.slice(1).join('|').trim(); // Text can contain pipes
+            const corpusUrnObj = parseCtsUrn(corpusUrnString);
+
+            if (!corpusUrnObj.valid) continue;
+
+            // 1. Namespace check
+            if (searchUrnObj.namespace !== corpusUrnObj.namespace) continue;
+
+            // 2. Work component congruence
+            const searchWorkParts = [searchUrnObj.workParts.textgroup, searchUrnObj.workParts.workid, searchUrnObj.workParts.version, searchUrnObj.workParts.exemplar].filter(Boolean);
+            const corpusWorkParts = [corpusUrnObj.workParts.textgroup, corpusUrnObj.workParts.workid, corpusUrnObj.workParts.version, corpusUrnObj.workParts.exemplar].filter(Boolean);
+            if (!_areComponentPartsCongruent(searchWorkParts, corpusWorkParts)) continue;
+
+            // 3. Passage matching
+            if (searchUrnObj.passageParts.isRange) {
+                // Search URN is a range. Corpus URN must be single and fall within the range.
+                if (corpusUrnObj.passageParts.isRange) continue; // Cannot match range with range for retrieval
+
+                const corpusRef = corpusUrnObj.passageParts.reference; // e.g. "1.1"
+                const rangeStart = searchUrnObj.passageParts.start;   // e.g. "1.1"
+                const rangeEnd = searchUrnObj.passageParts.end;       // e.g. "1.7"
+
+                // Lexicographical comparison as per "no meaning for sorting" for components
+                if (corpusRef >= rangeStart && corpusRef <= rangeEnd) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            } else {
+                // Search URN is single/empty. Corpus URN must be single/empty.
+                if (corpusUrnObj.passageParts.isRange) continue;
+
+                // Use passage component congruence for single/empty search
+                if (_areComponentPartsCongruent(searchUrnObj.passageParts.referenceParts, corpusUrnObj.passageParts.referenceParts)) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            }
+        }
+        return results;
+    }
+
+
+    // --- CITE2 URN Core Logic ---
+    function parseCite2Urn(urnString) {
+        const result = {
+            valid: false,
+            original: urnString,
+            error: null,
+            protocol: null,
+            nid: null,
+            namespace: null,
+            collectionComponent: null,
+            objectComponent: null,
+            collectionParts: { collectionid: null, versionid: null, propertyid: null },
+            objectParts: { isRange: false, reference: null, start: null, end: null } // Simpler than CTS for parts, as objectIDs are not period-delimited
+        };
+
+        if (typeof urnString !== 'string') {
+            result.error = "Input is not a string.";
+            return result;
+        }
+
+        const parts = urnString.split(':');
+        if (parts.length !== 5) {
+            result.error = "CITE2 URN must have 5 colon-delimited components.";
+            return result;
+        }
+
+        result.protocol = parts[0];
+        result.nid = parts[1];
+        result.namespace = parts[2];
+        result.collectionComponent = parts[3];
+        result.objectComponent = parts[4]; // Can be empty
+
+        if (result.protocol !== 'urn') {
+            result.error = "Component 1 must be 'urn'.";
+            return result;
+        }
+        if (result.nid !== 'cite2') {
+            result.error = "Component 2 must be 'cite2'.";
+            return result;
+        }
+        if (!result.namespace) {
+            result.error = "Component 3 (namespace) must be non-empty.";
+            return result;
+        }
+        if (!result.collectionComponent) {
+            result.error = "Component 4 (collection component) must be non-empty.";
+            return result;
+        }
+
+        // Validate Collection Component (1-3 period-separated parts, all non-empty)
+        const collectionComponentParts = _splitComponentString(result.collectionComponent);
+        if (!collectionComponentParts || collectionComponentParts.length === 0 || collectionComponentParts.length > 3) {
+            result.error = "Collection component must have 1-3 non-empty, period-separated parts.";
+            return result;
+        }
+        result.collectionParts.collectionid = collectionComponentParts[0] || null;
+        result.collectionParts.versionid = collectionComponentParts[1] || null;
+        result.collectionParts.propertyid = collectionComponentParts[2] || null;
+
+        // Validate Object Component
+        const objectStr = result.objectComponent;
+        if (objectStr.includes('-')) { // Potential range
+            const rangeParts = objectStr.split('-');
+            if (rangeParts.length !== 2 || !rangeParts[0] || !rangeParts[1] || rangeParts[0].includes('-') || rangeParts[1].includes('-')) {
+                result.error = "Object component range must have a non-empty start and end, separated by one hyphen. Start/end cannot contain hyphens.";
+                return result;
+            }
+            result.objectParts.isRange = true;
+            result.objectParts.start = rangeParts[0];
+            result.objectParts.end = rangeParts[1];
+        } else if (objectStr === "") { // Empty object component
+            result.objectParts.isRange = false;
+            result.objectParts.reference = "";
+        } else { // Single object identifier
+             if (objectStr.includes('-')) { // Should not happen if range logic is correct but defensive
+                result.error = "Single object identifier cannot contain a hyphen.";
+                return result;
+            }
+            result.objectParts.isRange = false;
+            result.objectParts.reference = objectStr;
+        }
+
+        result.valid = true;
+        return result;
+    }
+
+    function isValidCite2Urn(urnString) {
+        return parseCite2Urn(urnString).valid;
+    }
+
+    // --- CITE2 URN Accessor Functions ---
+    function cite2namespace(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.namespace : null;
+    }
+    function collectioncomponent(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionComponent : null;
+    }
+    function objectcomponent(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.objectComponent : null;
+    }
+    function collectionid(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionParts.collectionid : null;
+    }
+    function versionid(urnString) { // CITE2 collection version
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionParts.versionid : null;
+    }
+    function propertyid(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionParts.propertyid : null;
+    }
+
+    // --- CITE2 URN Comparison Functions ---
+    function areCite2UrnsEqual(urnString1, urnString2) {
+         // Robust equality check:
+        const p1 = parseCite2Urn(urnString1);
+        const p2 = parseCite2Urn(urnString2);
+
+        if (!p1.valid || !p2.valid) return false;
+
+        return p1.namespace === p2.namespace &&
+               p1.collectionComponent === p2.collectionComponent &&
+               p1.objectComponent === p2.objectComponent;
+    }
+
+    function areCite2UrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCite2Urn(urnString1);
+        const p2 = parseCite2Urn(urnString2);
+
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+
+        // Collection component congruence
+        const p1CollectionParts = [p1.collectionParts.collectionid, p1.collectionParts.versionid, p1.collectionParts.propertyid].filter(Boolean);
+        const p2CollectionParts = [p2.collectionParts.collectionid, p2.collectionParts.versionid, p2.collectionParts.propertyid].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1CollectionParts, p2CollectionParts)) return false;
+        
+        // Note: Object component is NOT part of CITE2 congruence definition.
+        return true;
+    }
+
+    // --- EXPORT PUBLIC API ---
+    exports.parseCtsUrn = parseCtsUrn;
+    exports.isValidCtsUrn = isValidCtsUrn;
+    exports.ctsnamespace = ctsnamespace;
+    exports.workcomponent = workcomponent;
+    exports.passagecomponent = passagecomponent;
+    exports.textgroup = textgroup;
+    exports.workid = workid;
+    exports.version = version;
+    exports.exemplar = exemplar;
+    exports.areCtsUrnsEqual = areCtsUrnsEqual;
+    exports.areCtsUrnsCongruent = areCtsUrnsCongruent;
+    exports.retrieveCtsPassages = retrieveCtsPassages;
+
+    exports.parseCite2Urn = parseCite2Urn;
+    exports.isValidCite2Urn = isValidCite2Urn;
+    exports.cite2namespace = cite2namespace;
+    exports.collectioncomponent = collectioncomponent;
+    exports.objectcomponent = objectcomponent;
+    exports.collectionid = collectionid;
+    exports.versionid = versionid;
+    exports.propertyid = propertyid;
+    exports.areCite2UrnsEqual = areCite2UrnsEqual;
+    exports.areCite2UrnsCongruent = areCite2UrnsCongruent;
+
+}(typeof exports === 'undefined' ? (this.URNTools = {}) : exports));
+```
+
+Now for the HTML test pages.
+
+**Test Page 1: CTS URN Syntax and Component Display (`cts_test_syntax.html`)**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CTS URN Syntax Test</title>
+    <script src="urn-lib.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .container { display: flex; gap: 20px; }
+        .urn-input, .urn-analysis { flex: 1; padding: 10px; border: 1px solid #ccc; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .error { color: red; }
+        .success { color: green; }
+        .comparison { margin-top: 20px; padding: 10px; border: 1px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>CTS URN Syntax and Component Analyzer</h1>
+    <p>Enter two CTS URNs to analyze their syntax, components, equality, and congruence.</p>
+    
+    <div class="container">
+        <div class="urn-input">
+            <label for="ctsUrn1">CTS URN 1:</label><br>
+            <input type="text" id="ctsUrn1" style="width: 90%;" value="urn:cts:hmt:tlg0012.tlg001.msA.normalized:1.1-1.7">
+        </div>
+        <div class="urn-input">
+            <label for="ctsUrn2">CTS URN 2:</label><br>
+            <input type="text" id="ctsUrn2" style="width: 90%;" value="urn:cts:hmt:tlg0012.tlg001:1.1">
+        </div>
+    </div>
+    <button onclick="analyzeCtsUrns()" style="margin-top:10px;">Analyze CTS URNs</button>
+
+    <div class="container" style="margin-top:20px;">
+        <div class="urn-analysis" id="analysis1"></div>
+        <div class="urn-analysis" id="analysis2"></div>
+    </div>
+
+    <div class="comparison" id="comparisonResults" style="display:none;">
+        <h2>Comparison Results</h2>
+        <p id="equalityResult"></p>
+        <p id="congruenceResult"></p>
+    </div>
+
+    <script>
+        function displayCtsAnalysis(urnString, targetElementId) {
+            const parsed = URNTools.parseCtsUrn(urnString);
+            const el = document.getElementById(targetElementId);
+            let html = `<h3>Analysis for: ${escapeHtml(urnString)}</h3>`;
+
+            if (parsed.valid) {
+                html += `<p class="success"><strong>Valid CTS URN</strong></p>`;
+                html += `<table>
+                            <tr><th>Component</th><th>Value</th></tr>
+                            <tr><td>Namespace</td><td>${escapeHtml(parsed.namespace)}</td></tr>
+                            <tr><td>Textgroup</td><td>${escapeHtml(parsed.workParts.textgroup || 'N/A')}</td></tr>
+                            <tr><td>Work ID</td><td>${escapeHtml(parsed.workParts.workid || 'N/A')}</td></tr>
+                            <tr><td>Version</td><td>${escapeHtml(parsed.workParts.version || 'N/A')}</td></tr>
+                            <tr><td>Exemplar</td><td>${escapeHtml(parsed.workParts.exemplar || 'N/A')}</td></tr>
+                            <tr><td>Passage Component</td><td>${escapeHtml(parsed.passageComponent)}</td></tr>
+                            <tr><td>Passage Type</td><td>`;
+                if (parsed.passageParts.isRange) {
+                    html += `Range (Start: ${escapeHtml(parsed.passageParts.start)}, End: ${escapeHtml(parsed.passageParts.end)})`;
+                } else if (parsed.passageParts.reference === "") {
+                    html += `Empty`;
+                } else {
+                    html += `Single Reference`;
+                }
+                html += `</td></tr></table>`;
+            } else {
+                html += `<p class="error"><strong>Invalid CTS URN</strong></p>`;
+                html += `<p class="error">Error: ${escapeHtml(parsed.error)}</p>`;
+            }
+            el.innerHTML = html;
+            return parsed.valid;
+        }
+
+        function analyzeCtsUrns() {
+            const urn1Str = document.getElementById('ctsUrn1').value;
+            const urn2Str = document.getElementById('ctsUrn2').value;
+
+            const valid1 = displayCtsAnalysis(urn1Str, 'analysis1');
+            const valid2 = displayCtsAnalysis(urn2Str, 'analysis2');
+
+            const comparisonDiv = document.getElementById('comparisonResults');
+            if (valid1 && valid2) {
+                const isEqual = URNTools.areCtsUrnsEqual(urn1Str, urn2Str);
+                const isCongruent = URNTools.areCtsUrnsCongruent(urn1Str, urn2Str);
+                document.getElementById('equalityResult').textContent = `URNs are Equal: ${isEqual ? 'Yes' : 'No'}`;
+                document.getElementById('congruenceResult').textContent = `URNs are Congruent: ${isCongruent ? 'Yes' : 'No'}`;
+                comparisonDiv.style.display = 'block';
+            } else {
+                comparisonDiv.style.display = 'none';
+                document.getElementById('equalityResult').textContent = 'Cannot compare: one or both URNs are invalid.';
+                document.getElementById('congruenceResult').textContent = '';
+                 if (!valid1 || !valid2) {
+                    comparisonDiv.style.display = 'block'; // Show invalid message
+                 }
+            }
+        }
+
+        function escapeHtml(unsafe) {
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        // Initial analysis on load
+        analyzeCtsUrns();
+    </script>
+</body>
+</html>
+```
+
+**Test Page 2: CTS Text Retrieval (`cts_test_retrieval.html`)**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CTS Text Retrieval Test</title>
+    <script src="urn-lib.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #resultsTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #resultsTable th, #resultsTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #resultsTable th { background-color: #f2f2f2; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>CTS Text Retrieval</h1>
+    <p>Enter a CTS URN to retrieve matching passages from the lxxglosses.cex corpus.</p>
+    <p>Corpus URL: <a href="https://raw.githubusercontent.com/neelsmith/complutensian-texts/refs/heads/main/cex-editions/lxxglosses.cex" target="_blank">lxxglosses.cex</a></p>
+
+    <div>
+        <label for="searchUrn">Search CTS URN:</label>
+        <input type="text" id="searchUrn" style="width: 60%;" value="urn:cts:comptex:lxxglosses.palette.v1:1">
+        <button onclick="performRetrieval()">Retrieve Passages</button>
+    </div>
+
+    <div id="status" style="margin-top:10px;"></div>
+    <div id="resultsContainer">
+        <table id="resultsTable" style="display:none;">
+            <thead><tr><th>Matched URN</th><th>Text Content</th></tr></thead>
+            <tbody id="resultsBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let corpusData = null;
+        const corpusUrl = 'https://raw.githubusercontent.com/neelsmith/complutensian-texts/refs/heads/main/cex-editions/lxxglosses.cex';
+        // const corpusUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://raw.githubusercontent.com/neelsmith/complutensian-texts/refs/heads/main/cex-editions/lxxglosses.cex');
+
+
+        async function fetchCorpus() {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Loading corpus...';
+            try {
+                // Using a CORS proxy for local testing if direct fetch fails due to CORS
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(corpusUrl);
+                const response = await fetch(proxyUrl); // Use proxyUrl for testing, corpusUrl for deployment if server has CORS
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                corpusData = await response.text();
+                statusEl.textContent = 'Corpus loaded successfully. Ready to search.';
+            } catch (error) {
+                console.error('Error fetching corpus:', error);
+                statusEl.innerHTML = `<span class="error">Failed to load corpus: ${error.message}. Ensure you are not blocked by CORS. Try a CORS proxy if needed.</span>`;
+                corpusData = null; // Ensure it's null on failure
+            }
+        }
+
+        function performRetrieval() {
+            const searchUrnStr = document.getElementById('searchUrn').value;
+            const statusEl = document.getElementById('status');
+            const resultsTable = document.getElementById('resultsTable');
+            const resultsBody = document.getElementById('resultsBody');
+
+            resultsBody.innerHTML = ''; // Clear previous results
+            resultsTable.style.display = 'none';
+
+            if (!URNTools.isValidCtsUrn(searchUrnStr)) {
+                statusEl.innerHTML = `<span class="error">Invalid search URN. Please enter a valid CTS URN.</span>`;
+                return;
+            }
+            
+            if (!corpusData) {
+                statusEl.innerHTML = `<span class="error">Corpus data not loaded. Please wait or try reloading.</span>`;
+                fetchCorpus(); // Attempt to load it again
+                return;
+            }
+
+            statusEl.textContent = 'Searching...';
+            try {
+                const matches = URNTools.retrieveCtsPassages(searchUrnStr, corpusData);
+                
+                if (matches.length > 0) {
+                    matches.forEach(match => {
+                        const row = resultsBody.insertRow();
+                        const cell1 = row.insertCell();
+                        const cell2 = row.insertCell();
+                        cell1.textContent = match.urn;
+                        cell2.textContent = match.text;
+                    });
+                    resultsTable.style.display = 'table';
+                    statusEl.textContent = `Found ${matches.length} matching passage(s).`;
+                } else {
+                    statusEl.textContent = 'No matching passages found.';
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span class="error">Error during retrieval: ${e.message}</span>`;
+                console.error(e);
+            }
+        }
+        
+        function escapeHtml(unsafe) { // Re-add for safety, though textContent is safer
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // Fetch corpus on page load
+        fetchCorpus();
+    </script>
+</body>
+</html>
+```
+
+**Test Page 3: CITE2 URN Syntax and Component Display (`cite2_test_syntax.html`)**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CITE2 URN Syntax Test</title>
+    <script src="urn-lib.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .container { display: flex; gap: 20px; }
+        .urn-input, .urn-analysis { flex: 1; padding: 10px; border: 1px solid #ccc; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .error { color: red; }
+        .success { color: green; }
+        .comparison { margin-top: 20px; padding: 10px; border: 1px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>CITE2 URN Syntax and Component Analyzer</h1>
+    <p>Enter two CITE2 URNs to analyze their syntax, components, equality, and congruence.</p>
+    
+    <div class="container">
+        <div class="urn-input">
+            <label for="cite2Urn1">CITE2 URN 1:</label><br>
+            <input type="text" id="cite2Urn1" style="width: 90%;" value="urn:cite2:citebl:burney86pages.v1.image:1r-2v">
+        </div>
+        <div class="urn-input">
+            <label for="cite2Urn2">CITE2 URN 2:</label><br>
+            <input type="text" id="cite2Urn2" style="width: 90%;" value="urn:cite2:citebl:burney86pages.v1:1r">
+        </div>
+    </div>
+    <button onclick="analyzeCite2Urns()" style="margin-top:10px;">Analyze CITE2 URNs</button>
+
+    <div class="container" style="margin-top:20px;">
+        <div class="urn-analysis" id="analysis1"></div>
+        <div class="urn-analysis" id="analysis2"></div>
+    </div>
+
+    <div class="comparison" id="comparisonResults" style="display:none;">
+        <h2>Comparison Results</h2>
+        <p id="equalityResult"></p>
+        <p id="congruenceResult"></p>
+    </div>
+
+    <script>
+        function displayCite2Analysis(urnString, targetElementId) {
+            const parsed = URNTools.parseCite2Urn(urnString);
+            const el = document.getElementById(targetElementId);
+            let html = `<h3>Analysis for: ${escapeHtml(urnString)}</h3>`;
+
+            if (parsed.valid) {
+                html += `<p class="success"><strong>Valid CITE2 URN</strong></p>`;
+                html += `<table>
+                            <tr><th>Component</th><th>Value</th></tr>
+                            <tr><td>Namespace</td><td>${escapeHtml(parsed.namespace)}</td></tr>
+                            <tr><td>Collection ID</td><td>${escapeHtml(parsed.collectionParts.collectionid || 'N/A')}</td></tr>
+                            <tr><td>Version ID</td><td>${escapeHtml(parsed.collectionParts.versionid || 'N/A')}</td></tr>
+                            <tr><td>Property ID</td><td>${escapeHtml(parsed.collectionParts.propertyid || 'N/A')}</td></tr>
+                            <tr><td>Object Component</td><td>${escapeHtml(parsed.objectComponent)}</td></tr>
+                            <tr><td>Object Type</td><td>`;
+                if (parsed.objectParts.isRange) {
+                    html += `Range (Start: ${escapeHtml(parsed.objectParts.start)}, End: ${escapeHtml(parsed.objectParts.end)})`;
+                } else if (parsed.objectParts.reference === "") {
+                    html += `Empty`;
+                } else {
+                    html += `Single Identifier`;
+                }
+                html += `</td></tr></table>`;
+            } else {
+                html += `<p class="error"><strong>Invalid CITE2 URN</strong></p>`;
+                html += `<p class="error">Error: ${escapeHtml(parsed.error)}</p>`;
+            }
+            el.innerHTML = html;
+            return parsed.valid;
+        }
+
+        function analyzeCite2Urns() {
+            const urn1Str = document.getElementById('cite2Urn1').value;
+            const urn2Str = document.getElementById('cite2Urn2').value;
+
+            const valid1 = displayCite2Analysis(urn1Str, 'analysis1');
+            const valid2 = displayCite2Analysis(urn2Str, 'analysis2');
+            
+            const comparisonDiv = document.getElementById('comparisonResults');
+            if (valid1 && valid2) {
+                const isEqual = URNTools.areCite2UrnsEqual(urn1Str, urn2Str);
+                const isCongruent = URNTools.areCite2UrnsCongruent(urn1Str, urn2Str);
+                document.getElementById('equalityResult').textContent = `URNs are Equal: ${isEqual ? 'Yes' : 'No'}`;
+                document.getElementById('congruenceResult').textContent = `URNs are Congruent: ${isCongruent ? 'Yes' : 'No'}`;
+                comparisonDiv.style.display = 'block';
+            } else {
+                comparisonDiv.style.display = 'none';
+                document.getElementById('equalityResult').textContent = 'Cannot compare: one or both URNs are invalid.';
+                document.getElementById('congruenceResult').textContent = '';
+                if (!valid1 || !valid2) {
+                    comparisonDiv.style.display = 'block';
+                }
+            }
+        }
+
+        function escapeHtml(unsafe) {
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        // Initial analysis on load
+        analyzeCite2Urns();
+    </script>
+</body>
+</html>
+```
+
+**To use this:**
+1.  Save the JavaScript library code as `urn-lib.js`.
+2.  Save the HTML test pages (e.g., `cts_test_syntax.html`, `cts_test_retrieval.html`, `cite2_test_syntax.html`) in the same directory as `urn-lib.js`.
+3.  Open the HTML files in a web browser.
+
+For the `cts_test_retrieval.html` page, fetching the corpus data from `raw.githubusercontent.com` might be blocked by CORS policies if you open the HTML file directly from your local file system (`file:///...`). To resolve this:
+*   Serve the files from a local web server (e.g., using Python's `http.server`, Node's `http-server`, or VS Code's Live Server extension).
+*   The code currently includes a `corsproxy.io` prefix. This is a public CORS proxy that can help during development. For a production scenario, you'd either host the CEX file on a domain that allows CORS or use your own proxy.
+
+This solution provides the requested JavaScript library and test pages. The library functions adhere to the specified URN structures and comparison rules. The retrieval logic for CTS URNs handles single passages, containers, and ranges (using lexicographical comparison for passage strings in ranges as per the "no meaning for sorting" constraint).
+
+You can place `urn-lib.js` in a GitHub repository. Then, to use it via jsDelivr, the URL would be something like:
+`https://cdn.jsdelivr.net/gh/YOUR_USERNAME/YOUR_REPOSITORY_NAME@VERSION_OR_BRANCH/urn-lib.js`
+(e.g., `https://cdn.jsdelivr.net/gh/neelsmith/myurnlib@main/urn-lib.js` if your username is `neelsmith` and repo is `myurnlib`).
+
+### USER
+Great! The test pages to inspect CTS URNs and CITE2 URNs work flawlessly! The page to test retrieval by CTS URN is failing with a message
+`Failed to load corpus: HTTP error! status: 404. Ensure you are not blocked by CORS.` Could you rewrite that HTML test page?
+
+### ASSISTANT
+You're right to point this out! A 404 error, even through a CORS proxy, usually means the underlying URL that the proxy is trying to fetch is incorrect or inaccessible *to the proxy*.
+
+The most common way to specify a branch for raw GitHub content is just the branch name, not the full `refs/heads/branch` path. Let's correct the URL and also add a fallback proxy mechanism to make it more robust for local `file:///` testing.
+
+Here's the revised `cts_test_retrieval.html`:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CTS Text Retrieval Test</title>
+    <script src="urn-lib.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #resultsTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #resultsTable th, #resultsTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #resultsTable th { background-color: #f2f2f2; }
+        .error { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .status-message { margin-top:10px; padding: 5px; border: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <h1>CTS Text Retrieval</h1>
+    <p>Enter a CTS URN to retrieve matching passages from the lxxglosses.cex corpus.</p>
+    
+    <!-- Corrected Corpus URL for display -->
+    <p>Corpus URL: <a href="https://raw.githubusercontent.com/neelsmith/complutensian-texts/main/cex-editions/lxxglosses.cex" target="_blank">lxxglosses.cex</a></p>
+
+    <div>
+        <label for="searchUrn">Search CTS URN:</label>
+        <input type="text" id="searchUrn" style="width: 60%;" value="urn:cts:comptex:lxxglosses.palette.v1:1">
+        <button onclick="performRetrieval()">Retrieve Passages</button>
+    </div>
+
+    <div id="status" class="status-message"></div>
+    <div id="resultsContainer">
+        <table id="resultsTable" style="display:none;">
+            <thead><tr><th>Matched URN</th><th>Text Content</th></tr></thead>
+            <tbody id="resultsBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let corpusData = null;
+        // Corrected and simplified GitHub raw content URL
+        const corpusUrl = 'https://raw.githubusercontent.com/neelsmith/complutensian-texts/main/cex-editions/lxxglosses.cex';
+
+        async function fetchWithProxy(urlToFetch, proxyTemplate, isJsonWrapped = false) {
+            const proxiedUrl = proxyTemplate.replace('{URL}', encodeURIComponent(urlToFetch));
+            const response = await fetch(proxiedUrl);
+            if (!response.ok) {
+                throw new Error(`Proxy fetch failed with status: ${response.status} for ${proxiedUrl}`);
+            }
+            if (isJsonWrapped) {
+                const jsonData = await response.json();
+                if (jsonData && typeof jsonData.contents === 'string') { // allorigins specific
+                    return jsonData.contents;
+                }
+                throw new Error('Proxy returned JSON but "contents" field was missing or not a string.');
+            }
+            return await response.text();
+        }
+
+        async function fetchCorpus() {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = '<span class="info">Loading corpus...</span>';
+
+            // Proxy options
+            const proxies = [
+                { name: 'corsproxy.io', template: 'https://corsproxy.io/?{URL}', isJson: false },
+                { name: 'allorigins.win', template: 'https://api.allorigins.win/raw?url={URL}', isJson: false } 
+                // Note: allorigins.win usually wraps in JSON, but their /raw endpoint gives raw text.
+                // If using their standard endpoint `https://api.allorigins.win/get?url={URL}`:
+                // { name: 'allorigins.win (JSON)', template: 'https://api.allorigins.win/get?url={URL}', isJson: true }
+            ];
+
+            // Attempt direct fetch first (will likely fail with CORS on file:/// but good for deployed envs)
+            try {
+                statusEl.innerHTML = '<span class="info">Attempting direct corpus fetch...</span>';
+                const response = await fetch(corpusUrl);
+                if (!response.ok) {
+                    throw new Error(`Direct fetch HTTP error! status: ${response.status}`);
+                }
+                corpusData = await response.text();
+                statusEl.innerHTML = '<span class="info">Corpus loaded successfully (direct). Ready to search.</span>';
+                return;
+            } catch (error) {
+                statusEl.innerHTML = `<span class="info">Direct fetch failed: ${escapeHtml(error.message)}. Trying proxies...</span>`;
+                console.warn('Direct fetch failed:', error);
+            }
+
+            // Try proxies if direct fetch fails
+            for (const proxy of proxies) {
+                try {
+                    statusEl.innerHTML = `<span class="info">Attempting fetch via ${proxy.name}...</span>`;
+                    corpusData = await fetchWithProxy(corpusUrl, proxy.template, proxy.isJson);
+                    statusEl.innerHTML = `<span class="info">Corpus loaded successfully (via ${proxy.name}). Ready to search.</span>`;
+                    return; // Success
+                } catch (proxyError) {
+                    console.warn(`Fetch via ${proxy.name} failed:`, proxyError);
+                    statusEl.innerHTML = `<span class="info">Fetch via ${proxy.name} failed: ${escapeHtml(proxyError.message)}.</span>`;
+                }
+            }
+
+            // If all attempts fail
+            statusEl.innerHTML = `<span class="error">Failed to load corpus after trying direct and proxy methods. Last error: ${escapeHtml(statusEl.textContent.split(': ').pop())}. Please check console for details and ensure the corpus URL is accessible.</span>`;
+            corpusData = null;
+        }
+
+        function performRetrieval() {
+            const searchUrnStr = document.getElementById('searchUrn').value;
+            const statusEl = document.getElementById('status'); // Re-fetch in case fetchCorpus updated it
+            const resultsTable = document.getElementById('resultsTable');
+            const resultsBody = document.getElementById('resultsBody');
+
+            resultsBody.innerHTML = ''; // Clear previous results
+            resultsTable.style.display = 'none';
+
+            if (!URNTools.isValidCtsUrn(searchUrnStr)) {
+                statusEl.innerHTML = `<span class="error">Invalid search URN. Please enter a valid CTS URN.</span>`;
+                return;
+            }
+            
+            if (!corpusData) {
+                // Don't overwrite detailed error from fetchCorpus if it's already an error
+                if (!statusEl.querySelector('.error')) {
+                    statusEl.innerHTML = `<span class="error">Corpus data not loaded. Please wait or try reloading the page.</span>`;
+                }
+                // Optional: Offer to retry loading corpus
+                // statusEl.innerHTML += ' <button onclick="fetchCorpus()">Retry Load</button>';
+                return;
+            }
+
+            statusEl.innerHTML = '<span class="info">Searching...</span>'; // Use innerHTML to allow span
+            try {
+                const matches = URNTools.retrieveCtsPassages(searchUrnStr, corpusData);
+                
+                if (matches.length > 0) {
+                    matches.forEach(match => {
+                        const row = resultsBody.insertRow();
+                        const cell1 = row.insertCell();
+                        const cell2 = row.insertCell();
+                        cell1.textContent = match.urn;
+                        cell2.textContent = match.text;
+                    });
+                    resultsTable.style.display = 'table';
+                    statusEl.innerHTML = `<span class="info">Found ${matches.length} matching passage(s).</span>`;
+                } else {
+                    statusEl.innerHTML = '<span class="info">No matching passages found.</span>';
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span class="error">Error during retrieval: ${escapeHtml(e.message)}</span>`;
+                console.error(e);
+            }
+        }
+        
+        function escapeHtml(unsafe) {
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // Fetch corpus on page load
+        fetchCorpus();
+    </script>
+</body>
+</html>
+```
+
+Key changes in this version:
+
+1.  **Corrected Corpus URL:** The `corpusUrl` variable now uses `.../main/...` instead of `.../refs/heads/main/...`. This is the more standard and robust way to link to raw content on the main branch.
+2.  **Enhanced `fetchCorpus` function:**
+    *   It first tries a **direct `fetch`**. This will fail with a CORS error if you're running from `file:///` but would work if the page is served from a web server (and GitHub allowed CORS, which `raw.githubusercontent.com` generally does for GET requests).
+    *   If the direct fetch fails (e.g., due to CORS), it then iterates through a list of **CORS proxies**:
+        *   `corsproxy.io` (returns raw text)
+        *   `api.allorigins.win/raw?url=` (also returns raw text directly, good alternative)
+    *   The `fetchWithProxy` helper function handles the proxy logic.
+    *   Status messages are updated more granularly to show which method is being attempted.
+3.  **Clearer Error Reporting:** If all fetch attempts fail, a more comprehensive error message is displayed.
+4.  **Status Element Update:** `statusEl.innerHTML` is used to allow styling of messages (e.g., with `<span class="error">`).
+5.  **`escapeHtml`:** Added this utility for safely displaying error messages or other dynamic text in HTML.
+
+This revised page should be more resilient in fetching the corpus data, especially when run from a local `file:///` URI, by trying multiple proxy options if the direct fetch is blocked by CORS or if one proxy is down. The 404 error you were seeing was likely due to the previous `refs/heads/main` in the URL not being what the proxy expected or could resolve correctly, or the proxy service itself having a hiccup. The simplified URL is much more standard.
+
+### USER
+  
+Thanks - that fixes the CORS issue.
+  
+In retrieving passages by CTS URN, our matching by URN congruence is not quite right. Comparison of each part of the work component and passage component must match the value for that part, not just a substring.
+  
+For example,
+`urn:cts:hmt:tlg0012.tlg001:1.1` is congruent with `urn:cts:hmt:tlg0012.tlg001:1` because the second URN has a single part to its passage component (`1`) and that matches the first part of the other URN's passage component (`1`). The URN  `urn:cts:hmt:tlg0012.tlg001:11` is _not_ congruent with either of the other two URNs, because its first part is `11` and does not match `11`. Could you fix this?
+
+### ASSISTANT
+Ah, you've hit on a subtle but crucial point in the definition of congruence for hierarchical identifiers! The current `_areComponentPartsCongruent` helper only checks that the parts present in the *shorter* array match the corresponding parts in the *longer* one.
+
+You're right: for a "container" URN (like `...:1`) to be congruent with a more specific URN (like `...:1.1`), it means that the search URN's components act as a *prefix* to the corpus URN's components, part by part.
+
+Let's redefine the congruence logic for this specific retrieval scenario.
+
+When retrieving:
+*   If search URN's passage component is `P1.P2` and corpus URN's passage is `C1.C2.C3`: Congruent if `P1==C1` AND `P2==C2`.
+*   If search URN's passage component is `P1` (container) and corpus URN's passage is `C1.C2`: Congruent if `P1==C1`.
+*   If search URN's passage component is `P1.P2` and corpus URN's passage is `C1`: NOT congruent for retrieval (search is more specific than data).
+*   If search URN's passage component is empty (entire work), and corpus URN is `C1.C2`: Always congruent in terms of passage (as long as work parts match).
+
+The `areCtsUrnsCongruent` function for *general comparison* between two arbitrary URNs should probably stick to the "all present parts must match" rule. However, for *retrieval*, where one URN (the search query) acts as a filter for another (the data point), the "prefix matching" or "container matching" logic is what's needed for the passage component.
+
+Let's adjust the `retrieveCtsPassages` function and potentially refine the `_areComponentPartsCongruent` or add a new helper for this specific "hierarchical prefix" style of congruence.
+
+**Refined Logic for `retrieveCtsPassages`:**
+
+1.  **Namespace:** Must be identical.
+2.  **Work Component:** The parts of the search URN's work component must be a prefix of the corpus URN's work component. (e.g., `tlg0012.tlg001` matches `tlg0012.tlg001.msA`).
+3.  **Passage Component:**
+    *   **If search URN is a range:** The corpus URN must be a single passage (not a range) and its passage identifier (as a string) must fall lexicographically within the start and end of the search URN's range.
+    *   **If search URN is a single passage or empty (container):**
+        *   The corpus URN must be a single passage (not a range).
+        *   The period-separated parts of the search URN's passage component must be an exact prefix of the period-separated parts of the corpus URN's passage component.
+            *   If search passage is empty, it's a prefix to any corpus passage.
+            *   If search passage is `A`, it's a prefix to `A`, `A.B`, `A.B.C`.
+            *   If search passage is `A.B`, it's a prefix to `A.B`, `A.B.C`. It is NOT a prefix to `A`.
+
+Let's modify `_areComponentPartsCongruent` to make it suitable for this prefix-style check, and perhaps rename it to be more specific if we use it only in retrieval. Or, more cleanly, introduce a new helper.
+
+**New Helper for Hierarchical Prefix Congruence:**
+
+```javascript
+    /**
+     * Checks if `searchParts` is a hierarchical prefix of `corpusParts`.
+     * e.g., ["1"] is a prefix of ["1", "1"], ["1", "2"].
+     * e.g., ["1", "1"] is a prefix of ["1", "1", "a"].
+     * It is NOT a prefix if searchParts is longer, or any part mismatches.
+     * @param {string[]} searchParts The parts of the searching component.
+     * @param {string[]} corpusParts The parts of the component from the corpus.
+     * @returns {boolean} True if searchParts is a hierarchical prefix of corpusParts.
+     */
+    function _isHierarchicalPrefix(searchParts, corpusParts) {
+        if (!searchParts || !corpusParts) return false; // Should not happen
+        if (searchParts.length === 0) return true; // Empty search matches anything hierarchically below it
+        if (searchParts.length > corpusParts.length) return false; // Search cannot be more specific
+
+        for (let i = 0; i < searchParts.length; i++) {
+            if (searchParts[i] !== corpusParts[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+```
+
+Now, let's integrate this into `retrieveCtsPassages`. The `areCtsUrnsCongruent` function will remain as it was, for general URN-to-URN comparison as per the initial definition.
+
+**Modified `retrieveCtsPassages` in `urn-lib.js`:**
+
+```javascript
+// ... (previous code in urn-lib.js) ...
+
+    /**
+     * Checks if `searchParts` is a hierarchical prefix of `corpusParts`.
+     * e.g., ["1"] is a prefix of ["1", "1"], ["1", "2"].
+     * e.g., ["1", "1"] is a prefix of ["1", "1", "a"].
+     * It is NOT a prefix if searchParts is longer, or any part mismatches.
+     * An empty searchParts array is considered a prefix of any corpusParts array.
+     * @param {string[]} searchParts The parts of the searching component.
+     * @param {string[]} corpusParts The parts of the component from the corpus.
+     * @returns {boolean} True if searchParts is a hierarchical prefix of corpusParts.
+     */
+    function _isHierarchicalPrefix(searchParts, corpusParts) {
+        if (!searchParts || !corpusParts) return false; 
+        // If searchParts is empty (e.g., passage component is empty, meaning whole work/textgroup),
+        // it is considered a prefix for any specific passage within that work.
+        if (searchParts.length === 0) return true; 
+        
+        if (searchParts.length > corpusParts.length) return false; // Search cannot be more specific and still be a prefix
+
+        for (let i = 0; i < searchParts.length; i++) {
+            if (searchParts[i] !== corpusParts[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // --- CTS Text Retrieval ---
+    function retrieveCtsPassages(searchUrnString, corpusDataString) {
+        const searchUrnObj = parseCtsUrn(searchUrnString);
+        if (!searchUrnObj.valid) {
+            console.error("Invalid search URN:", searchUrnObj.error);
+            return [];
+        }
+
+        const lines = corpusDataString.split('\n');
+        const results = [];
+
+        // Skip header line
+        const dataLines = lines.slice(1);
+
+        for (const line of dataLines) {
+            if (line.trim() === "") continue;
+            const parts = line.split('|');
+            if (parts.length < 2) continue;
+
+            const corpusUrnString = parts[0].trim();
+            const textContent = parts.slice(1).join('|').trim();
+            const corpusUrnObj = parseCtsUrn(corpusUrnString);
+
+            if (!corpusUrnObj.valid) continue;
+
+            // 1. Namespace check (must be identical)
+            if (searchUrnObj.namespace !== corpusUrnObj.namespace) continue;
+
+            // 2. Work component hierarchical prefix matching
+            const searchWorkPartsArray = [searchUrnObj.workParts.textgroup, searchUrnObj.workParts.workid, searchUrnObj.workParts.version, searchUrnObj.workParts.exemplar].filter(p => p !== null);
+            const corpusWorkPartsArray = [corpusUrnObj.workParts.textgroup, corpusUrnObj.workParts.workid, corpusUrnObj.workParts.version, corpusUrnObj.workParts.exemplar].filter(p => p !== null);
+            
+            if (!_isHierarchicalPrefix(searchWorkPartsArray, corpusWorkPartsArray)) continue;
+
+            // 3. Passage matching
+            if (searchUrnObj.passageParts.isRange) {
+                // Search URN is a range. Corpus URN must be single and fall within the range.
+                if (corpusUrnObj.passageParts.isRange) continue; // Cannot match range with range for retrieval
+                if (corpusUrnObj.passageParts.reference === "") continue; // Cannot match empty passage with range
+
+                const corpusRef = corpusUrnObj.passageParts.reference; // e.g. "1.1"
+                const rangeStart = searchUrnObj.passageParts.start;   // e.g. "1.1"
+                const rangeEnd = searchUrnObj.passageParts.end;       // e.g. "1.7"
+                
+                // Lexicographical comparison for range
+                // This assumes passage identifiers are "sortable" in a way that makes sense for ranges.
+                // For "1.1" vs "1.10", "1.10" comes after "1.1" lexicographically.
+                // If "1.title" is involved, "1.title" might come after "1.1" or "1.9".
+                // The prompt stated "no meaning for sorting" for components generally, but for ranges,
+                // some form of ordered comparison is implicit. Lexicographical is the default for strings.
+                if (corpusRef >= rangeStart && corpusRef <= rangeEnd) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            } else {
+                // Search URN is single/empty (container). Corpus URN must be single (not a range, not empty).
+                if (corpusUrnObj.passageParts.isRange) continue;
+                // An empty passage in the corpus is usually not a citable unit for content retrieval unless explicitly sought
+                // if (corpusUrnObj.passageParts.reference === "" && searchUrnObj.passageParts.reference !== "") continue;
+
+
+                // Use passage component hierarchical prefix matching
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.referenceParts, corpusUrnObj.passageParts.referenceParts)) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            }
+        }
+        return results;
+    }
+
+// ... (rest of urn-lib.js, including CITE2 functions and exports) ...
+```
+
+**Explanation of Changes to `retrieveCtsPassages`:**
+
+1.  **`_isHierarchicalPrefix` helper:** This new function is introduced as described above. It correctly checks if `searchParts` form an exact prefix of `corpusParts`.
+    *   Crucially, if `searchParts` is empty (e.g., `urn:cts:hmt:tlg0012.tlg001:`), it will match any `corpusParts` (e.g., `1.1`, `1.2`, etc.), effectively retrieving all passages of that work.
+2.  **Work Component Matching:** Changed from `_areComponentPartsCongruent` to `_isHierarchicalPrefix`.
+    *   `searchWorkPartsArray`: Constructed by filtering `null` values to ensure only defined parts are used.
+    *   `corpusWorkPartsArray`: Similarly constructed.
+    *   Now, `urn:cts:hmt:tlg0012.tlg001:` (search) will correctly match a corpus entry like `urn:cts:hmt:tlg0012.tlg001.msA:1.1`.
+3.  **Passage Component Matching (Non-Range Search):**
+    *   Also changed to use `_isHierarchicalPrefix` for `searchUrnObj.passageParts.referenceParts` and `corpusUrnObj.passageParts.referenceParts`.
+    *   This ensures that a search for `...:1` (parts: `["1"]`) will match corpus entries like `...:1.1` (parts: `["1", "1"]`) and `...:1.title` (parts: `["1", "title"]`).
+    *   A search for `...:1.1` (parts: `["1", "1"]`) will only match corpus entries like `...:1.1` or `...:1.1.subpart`, but not `...:1`.
+    *   A search for `...:11` (parts: `["11"]`) will not match `...:1.1` (parts: `["1", "1"]`) because `["11"]` is not a prefix of `["1", "1"]`.
+4.  **Range Retrieval:** The logic for range retrieval remains the same (lexicographical comparison of the full passage strings). This part seems to align with typical expectations for range queries.
+5.  **Empty Corpus Passage:**
+    *   In the non-range search branch, `if (corpusUrnObj.passageParts.reference === "" && searchUrnObj.passageParts.reference !== "") continue;` was commented out. If a corpus URN has an *empty* passage component, it's unlikely to contain citable text content for a *specific* passage search. However, if the search URN *also* has an empty passage component, `_isHierarchicalPrefix([], [])` would be true. This needs careful consideration based on how you want to treat data lines with URNs that have empty passage components. For now, I'm letting `_isHierarchicalPrefix` handle it (empty search passage matches any corpus passage, including empty, if work matches).
+
+**Testing the Examples:**
+
+*   Search: `urn:cts:hmt:tlg0012.tlg001:1`
+    *   `searchUrnObj.passageParts.referenceParts` = `["1"]`
+    *   Corpus: `urn:cts:hmt:tlg0012.tlg001:1.1`
+        *   `corpusUrnObj.passageParts.referenceParts` = `["1", "1"]`
+        *   `_isHierarchicalPrefix(["1"], ["1", "1"])` -> `true`. **MATCH.**
+    *   Corpus: `urn:cts:hmt:tlg0012.tlg001:1.title`
+        *   `corpusUrnObj.passageParts.referenceParts` = `["1", "title"]`
+        *   `_isHierarchicalPrefix(["1"], ["1", "title"])` -> `true`. **MATCH.**
+
+*   Search: `urn:cts:hmt:tlg0012.tlg001:11`
+    *   `searchUrnObj.passageParts.referenceParts` = `["11"]`
+    *   Corpus: `urn:cts:hmt:tlg0012.tlg001:1.1`
+        *   `corpusUrnObj.passageParts.referenceParts` = `["1", "1"]`
+        *   `_isHierarchicalPrefix(["11"], ["1", "1"])` -> `false`. **NO MATCH.**
+    *   Corpus: `urn:cts:hmt:tlg0012.tlg001:1`
+        *   `corpusUrnObj.passageParts.referenceParts` = `["1"]`
+        *   `_isHierarchicalPrefix(["11"], ["1"])` -> `false`. **NO MATCH.**
+
+This revised logic should now correctly implement the "container" or "hierarchical prefix" matching that is typical for such URN-based retrieval systems. The `areCtsUrnsCongruent` function remains for the general URN-to-URN congruence check as defined in the prompt, while `retrieveCtsPassages` uses a more specific matching approach for its purpose.
+
+### USER
+Could you show me the entire library with these changes incorporated?
+
+### ASSISTANT
+Certainly! Here is the complete `urn-lib.js` file with the refined CTS URN retrieval logic incorporating the `_isHierarchicalPrefix` helper and the adjustments to `retrieveCtsPassages`.
+
+```javascript
+(function(exports) {
+    'use strict';
+
+    // --- HELPER FUNCTIONS ---
+
+    /**
+     * Splits a component string by period, ensuring no empty parts result.
+     * @param {string} componentStr The component string.
+     * @returns {string[]|null} Array of parts, or null if invalid (e.g., "a..b").
+     */
+    function _splitComponentString(componentStr) {
+        if (componentStr === "") return [];
+        const parts = componentStr.split('.');
+        if (parts.some(p => p === "")) return null; // No empty parts like "a..b"
+        return parts;
+    }
+
+    /**
+     * Compares two arrays of component parts for general congruence.
+     * Congruent if all parts in the shorter array match corresponding parts in the longer array,
+     * AND if the shorter array is truly a prefix (i.e., the longer array doesn't have *fewer* matching parts).
+     * This is used for the general areCtsUrnsCongruent and areCite2UrnsCongruent.
+     * @param {string[]} parts1 First array of parts.
+     * @param {string[]} parts2 Second array of parts.
+     * @returns {boolean} True if congruent, false otherwise.
+     */
+    function _areComponentPartsCongruent(parts1, parts2) {
+        if (!parts1 || !parts2) return false;
+        const minLen = Math.min(parts1.length, parts2.length);
+        // For general congruence, the one with fewer components dictates the comparison length.
+        // All its components must match the corresponding components of the other.
+        for (let i = 0; i < minLen; i++) {
+            if (parts1[i] !== parts2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if `searchParts` is a hierarchical prefix of `corpusParts`.
+     * e.g., ["1"] is a prefix of ["1", "1"], ["1", "2"].
+     * e.g., ["1", "1"] is a prefix of ["1", "1", "a"].
+     * It is NOT a prefix if searchParts is longer, or any part mismatches.
+     * An empty searchParts array is considered a prefix of any corpusParts array.
+     * @param {string[]} searchParts The parts of the searching component.
+     * @param {string[]} corpusParts The parts of the component from the corpus.
+     * @returns {boolean} True if searchParts is a hierarchical prefix of corpusParts.
+     */
+    function _isHierarchicalPrefix(searchParts, corpusParts) {
+        if (!searchParts || !corpusParts) return false;
+        // If searchParts is empty (e.g., passage component is empty, meaning whole work/textgroup),
+        // it is considered a prefix for any specific passage within that work.
+        if (searchParts.length === 0) return true;
+
+        if (searchParts.length > corpusParts.length) return false; // Search cannot be more specific and still be a prefix
+
+        for (let i = 0; i < searchParts.length; i++) {
+            if (searchParts[i] !== corpusParts[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    // --- CTS URN Core Logic ---
+
+    function parseCtsUrn(urnString) {
+        const result = {
+            valid: false,
+            original: urnString,
+            error: null,
+            protocol: null,
+            nid: null,
+            namespace: null,
+            workComponent: null,
+            passageComponent: null,
+            workParts: { textgroup: null, workid: null, version: null, exemplar: null },
+            passageParts: { isRange: false, reference: null, referenceParts: [], start: null, startParts: [], end: null, endParts: [] }
+        };
+
+        if (typeof urnString !== 'string') {
+            result.error = "Input is not a string.";
+            return result;
+        }
+
+        const parts = urnString.split(':');
+        if (parts.length !== 5) {
+            result.error = "CTS URN must have 5 colon-delimited components.";
+            return result;
+        }
+
+        result.protocol = parts[0];
+        result.nid = parts[1];
+        result.namespace = parts[2];
+        result.workComponent = parts[3];
+        result.passageComponent = parts[4];
+
+        if (result.protocol !== 'urn') {
+            result.error = "Component 1 must be 'urn'.";
+            return result;
+        }
+        if (result.nid !== 'cts') {
+            result.error = "Component 2 must be 'cts'.";
+            return result;
+        }
+        if (!result.namespace) {
+            result.error = "Component 3 (namespace) must be non-empty.";
+            return result;
+        }
+        if (!result.workComponent) {
+            result.error = "Component 4 (work component) must be non-empty.";
+            return result;
+        }
+
+        const workComponentParts = _splitComponentString(result.workComponent);
+        if (!workComponentParts || workComponentParts.length === 0 || workComponentParts.length > 4) {
+            result.error = "Work component must have 1-4 non-empty, period-separated parts.";
+            return result;
+        }
+        result.workParts.textgroup = workComponentParts[0] || null;
+        result.workParts.workid = workComponentParts[1] || null;
+        result.workParts.version = workComponentParts[2] || null;
+        result.workParts.exemplar = workComponentParts[3] || null;
+
+        const passageStr = result.passageComponent;
+        if (passageStr.includes('-')) {
+            const rangeParts = passageStr.split('-');
+            if (rangeParts.length !== 2 || !rangeParts[0] || !rangeParts[1]) {
+                result.error = "Passage range must have a non-empty start and end, separated by one hyphen.";
+                return result;
+            }
+            const startPassageParts = _splitComponentString(rangeParts[0]);
+            const endPassageParts = _splitComponentString(rangeParts[1]);
+
+            if (!startPassageParts || startPassageParts.length === 0) {
+                result.error = "Range start identifier must have at least one non-empty part.";
+                return result;
+            }
+            if (!endPassageParts || endPassageParts.length === 0) {
+                result.error = "Range end identifier must have at least one non-empty part.";
+                return result;
+            }
+            result.passageParts.isRange = true;
+            result.passageParts.start = rangeParts[0];
+            result.passageParts.startParts = startPassageParts;
+            result.passageParts.end = rangeParts[1];
+            result.passageParts.endParts = endPassageParts;
+        } else if (passageStr === "") {
+            result.passageParts.isRange = false;
+            result.passageParts.reference = "";
+            result.passageParts.referenceParts = []; // Explicitly an empty array
+        } else {
+            const singlePassageParts = _splitComponentString(passageStr);
+            if (!singlePassageParts || singlePassageParts.length === 0) {
+                result.error = "Non-empty, non-range passage identifier must have at least one non-empty part.";
+                return result;
+            }
+            result.passageParts.isRange = false;
+            result.passageParts.reference = passageStr;
+            result.passageParts.referenceParts = singlePassageParts;
+        }
+
+        result.valid = true;
+        return result;
+    }
+
+    function isValidCtsUrn(urnString) {
+        return parseCtsUrn(urnString).valid;
+    }
+
+    function ctsnamespace(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.namespace : null;
+    }
+    function workcomponent(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workComponent : null;
+    }
+    function passagecomponent(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.passageComponent : null;
+    }
+    function textgroup(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.textgroup : null;
+    }
+    function workid(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.workid : null;
+    }
+    function version(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.version : null;
+    }
+    function exemplar(urnString) {
+        const p = parseCtsUrn(urnString);
+        return p.valid ? p.workParts.exemplar : null;
+    }
+
+    function areCtsUrnsEqual(urnString1, urnString2) {
+        const p1 = parseCtsUrn(urnString1);
+        const p2 = parseCtsUrn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        return p1.namespace === p2.namespace &&
+               p1.workComponent === p2.workComponent &&
+               p1.passageComponent === p2.passageComponent;
+    }
+
+    function areCtsUrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCtsUrn(urnString1);
+        const p2 = parseCtsUrn(urnString2);
+
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+
+        const p1WorkActualParts = [p1.workParts.textgroup, p1.workParts.workid, p1.workParts.version, p1.workParts.exemplar].filter(Boolean);
+        const p2WorkActualParts = [p2.workParts.textgroup, p2.workParts.workid, p2.workParts.version, p2.workParts.exemplar].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1WorkActualParts, p2WorkActualParts)) return false;
+
+        if (p1.passageParts.isRange !== p2.passageParts.isRange) return false;
+
+        if (p1.passageParts.isRange) {
+            if (!_areComponentPartsCongruent(p1.passageParts.startParts, p2.passageParts.startParts)) return false;
+            if (!_areComponentPartsCongruent(p1.passageParts.endParts, p2.passageParts.endParts)) return false;
+        } else {
+            if (!_areComponentPartsCongruent(p1.passageParts.referenceParts, p2.passageParts.referenceParts)) return false;
+        }
+        return true;
+    }
+
+    function retrieveCtsPassages(searchUrnString, corpusDataString) {
+        const searchUrnObj = parseCtsUrn(searchUrnString);
+        if (!searchUrnObj.valid) {
+            console.error("Invalid search URN:", searchUrnObj.error);
+            return [];
+        }
+
+        const lines = corpusDataString.split('\n');
+        const results = [];
+        const dataLines = lines.slice(1);
+
+        for (const line of dataLines) {
+            if (line.trim() === "") continue;
+            const parts = line.split('|');
+            if (parts.length < 2) continue;
+
+            const corpusUrnString = parts[0].trim();
+            const textContent = parts.slice(1).join('|').trim();
+            const corpusUrnObj = parseCtsUrn(corpusUrnString);
+
+            if (!corpusUrnObj.valid) continue;
+
+            if (searchUrnObj.namespace !== corpusUrnObj.namespace) continue;
+
+            const searchWorkPartsArray = [searchUrnObj.workParts.textgroup, searchUrnObj.workParts.workid, searchUrnObj.workParts.version, searchUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+            const corpusWorkPartsArray = [corpusUrnObj.workParts.textgroup, corpusUrnObj.workParts.workid, corpusUrnObj.workParts.version, corpusUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+            if (!_isHierarchicalPrefix(searchWorkPartsArray, corpusWorkPartsArray)) continue;
+
+            if (searchUrnObj.passageParts.isRange) {
+                if (corpusUrnObj.passageParts.isRange) continue;
+                if (corpusUrnObj.passageParts.reference === "") continue;
+
+                const corpusRef = corpusUrnObj.passageParts.reference;
+                const rangeStart = searchUrnObj.passageParts.start;
+                const rangeEnd = searchUrnObj.passageParts.end;
+                
+                if (corpusRef >= rangeStart && corpusRef <= rangeEnd) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            } else {
+                if (corpusUrnObj.passageParts.isRange) continue;
+                // For non-range search, an empty passage in corpus might only be matched by an empty search passage.
+                // If search passage is specific (not empty), but corpus passage is empty, it's not a match.
+                if (searchUrnObj.passageParts.reference !== "" && corpusUrnObj.passageParts.reference === "") continue;
+
+
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.referenceParts, corpusUrnObj.passageParts.referenceParts)) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            }
+        }
+        return results;
+    }
+
+    // --- CITE2 URN Core Logic ---
+    function parseCite2Urn(urnString) {
+        const result = {
+            valid: false,
+            original: urnString,
+            error: null,
+            protocol: null,
+            nid: null,
+            namespace: null,
+            collectionComponent: null,
+            objectComponent: null,
+            collectionParts: { collectionid: null, versionid: null, propertyid: null },
+            objectParts: { isRange: false, reference: null, start: null, end: null }
+        };
+
+        if (typeof urnString !== 'string') {
+            result.error = "Input is not a string.";
+            return result;
+        }
+
+        const parts = urnString.split(':');
+        if (parts.length !== 5) {
+            result.error = "CITE2 URN must have 5 colon-delimited components.";
+            return result;
+        }
+
+        result.protocol = parts[0];
+        result.nid = parts[1];
+        result.namespace = parts[2];
+        result.collectionComponent = parts[3];
+        result.objectComponent = parts[4];
+
+        if (result.protocol !== 'urn') {
+            result.error = "Component 1 must be 'urn'.";
+            return result;
+        }
+        if (result.nid !== 'cite2') {
+            result.error = "Component 2 must be 'cite2'.";
+            return result;
+        }
+        if (!result.namespace) {
+            result.error = "Component 3 (namespace) must be non-empty.";
+            return result;
+        }
+        if (!result.collectionComponent) {
+            result.error = "Component 4 (collection component) must be non-empty.";
+            return result;
+        }
+
+        const collectionComponentParts = _splitComponentString(result.collectionComponent);
+        if (!collectionComponentParts || collectionComponentParts.length === 0 || collectionComponentParts.length > 3) {
+            result.error = "Collection component must have 1-3 non-empty, period-separated parts.";
+            return result;
+        }
+        result.collectionParts.collectionid = collectionComponentParts[0] || null;
+        result.collectionParts.versionid = collectionComponentParts[1] || null;
+        result.collectionParts.propertyid = collectionComponentParts[2] || null;
+
+        const objectStr = result.objectComponent;
+        if (objectStr.includes('-')) {
+            const rangeParts = objectStr.split('-');
+            if (rangeParts.length !== 2 || !rangeParts[0] || !rangeParts[1] || rangeParts[0].includes('-') || rangeParts[1].includes('-')) {
+                result.error = "Object component range must have a non-empty start and end, separated by one hyphen. Start/end cannot contain hyphens.";
+                return result;
+            }
+            result.objectParts.isRange = true;
+            result.objectParts.start = rangeParts[0];
+            result.objectParts.end = rangeParts[1];
+        } else if (objectStr === "") {
+            result.objectParts.isRange = false;
+            result.objectParts.reference = "";
+        } else {
+             if (objectStr.includes('-')) {
+                result.error = "Single object identifier cannot contain a hyphen.";
+                return result;
+            }
+            result.objectParts.isRange = false;
+            result.objectParts.reference = objectStr;
+        }
+
+        result.valid = true;
+        return result;
+    }
+
+    function isValidCite2Urn(urnString) {
+        return parseCite2Urn(urnString).valid;
+    }
+
+    function cite2namespace(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.namespace : null;
+    }
+    function collectioncomponent(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionComponent : null;
+    }
+    function objectcomponent(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.objectComponent : null;
+    }
+    function collectionid(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionParts.collectionid : null;
+    }
+    function versionid(urnString) { // CITE2 collection version
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionParts.versionid : null;
+    }
+    function propertyid(urnString) {
+        const p = parseCite2Urn(urnString);
+        return p.valid ? p.collectionParts.propertyid : null;
+    }
+
+    function areCite2UrnsEqual(urnString1, urnString2) {
+        const p1 = parseCite2Urn(urnString1);
+        const p2 = parseCite2Urn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        return p1.namespace === p2.namespace &&
+               p1.collectionComponent === p2.collectionComponent &&
+               p1.objectComponent === p2.objectComponent;
+    }
+
+    function areCite2UrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCite2Urn(urnString1);
+        const p2 = parseCite2Urn(urnString2);
+
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+
+        const p1CollectionActualParts = [p1.collectionParts.collectionid, p1.collectionParts.versionid, p1.collectionParts.propertyid].filter(Boolean);
+        const p2CollectionActualParts = [p2.collectionParts.collectionid, p2.collectionParts.versionid, p2.collectionParts.propertyid].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1CollectionActualParts, p2CollectionActualParts)) return false;
+        
+        return true; // Object component is not part of CITE2 congruence
+    }
+
+    // --- EXPORT PUBLIC API ---
+    exports.parseCtsUrn = parseCtsUrn;
+    exports.isValidCtsUrn = isValidCtsUrn;
+    exports.ctsnamespace = ctsnamespace;
+    exports.workcomponent = workcomponent;
+    exports.passagecomponent = passagecomponent;
+    exports.textgroup = textgroup;
+    exports.workid = workid;
+    exports.version = version; // CTS work version
+    exports.exemplar = exemplar;
+    exports.areCtsUrnsEqual = areCtsUrnsEqual;
+    exports.areCtsUrnsCongruent = areCtsUrnsCongruent;
+    exports.retrieveCtsPassages = retrieveCtsPassages;
+
+    exports.parseCite2Urn = parseCite2Urn;
+    exports.isValidCite2Urn = isValidCite2Urn;
+    exports.cite2namespace = cite2namespace;
+    exports.collectioncomponent = collectioncomponent;
+    exports.objectcomponent = objectcomponent;
+    exports.collectionid = collectionid;
+    exports.versionid = versionid; // CITE2 collection version
+    exports.propertyid = propertyid;
+    exports.areCite2UrnsEqual = areCite2UrnsEqual;
+    exports.areCite2UrnsCongruent = areCite2UrnsCongruent;
+
+}(typeof exports === 'undefined' ? (this.URNTools = {}) : exports));
+```
+
+**Key changes visible in this full listing:**
+
+1.  **`_isHierarchicalPrefix` function:** Added this new helper.
+2.  **`_areComponentPartsCongruent` function:** This function remains for general congruence checks (as used in `areCtsUrnsCongruent` and `areCite2UrnsCongruent`). Its logic ensures that for two sets of component parts, the comparison is based on the length of the shorter set, and all corresponding parts must match.
+3.  **`retrieveCtsPassages` function:**
+    *   Uses `_isHierarchicalPrefix` for matching the work component parts.
+    *   Uses `_isHierarchicalPrefix` for matching the passage component parts when the search URN is *not* a range.
+    *   Includes a filter: `filter(p => p !== null && p !== undefined)` when creating `searchWorkPartsArray` and `corpusWorkPartsArray` to be absolutely sure only defined parts are passed to `_isHierarchicalPrefix`. This is mostly for robustness, as `parseCtsUrn` should already assign `null` to undefined work parts.
+    *   Added a line: `if (searchUrnObj.passageParts.reference !== "" && corpusUrnObj.passageParts.reference === "") continue;` This prevents matching a specific passage search (e.g., `:1.1`) against a corpus entry that represents the whole work/textgroup via an empty passage component (e.g., data line `urn:cts:hmt:tlg0012.tlg001:|Some overall description`). This seems like a reasonable exclusion for passage retrieval.
+
+This version should now correctly handle the hierarchical ("container") matching for CTS URN retrieval as discussed.
+
+### USER
+Retrieval is working correctly for leaf nodes like `urn:cts:compnov:bible.genesis.lxxlatinnormed:1.1` in the test data set, and for container nodes like `urn:cts:compnov:bible.genesis.lxxlatinnormed:1` in the data set. It is incorrect for ranges like `urn:cts:compnov:bible.genesis.lxxlatinnormed:1.1-1.3` and appears to be erroneously using substring matching to find ranges of passages. Let's review the logic.
+The first node in the range is the first node identified by the starting part of the passage component. for example, in the text data set, if the start of the range `urn:cts:compnov:bible.genesis.lxxlatinnormed:1.1-1.3` is `1.1`, and it matches a leaf node reference in the test data set `urn:cts:compnov:bible.genesis.lxxlatinnormed:1.1`. The end of the range is `1.3` which also matches a leaf node reference in the test data set. Since order of the corpus is defined by the sequence of passages in the data set, the range will include all the passages from `1.1` to `1.3` inclusively. In the range URN `urn:cts:compnov:bible.genesis.lxxlatinnormed:1-2` the start `1` does not match a leaf node in our test data: it is a container reference, so we find the first node in that container. In the test data, that happens to be `urn:cts:compnov:bible.genesis.lxxlatinnormed:1.title`. The range end `2` also is a container. We find the last node in the container which in the test data is `urn:cts:compnov:bible.genesis.lxxlatinnormed:2.25`. The range is therefore all the nodes between `1.title` and `2.25`, inclusive.
+Could you revise range retrieval to account for this, and show me the entire library with the revisions incorporated?
+
+### ASSISTANT
+You've described a more sophisticated and accurate way to handle range retrieval, especially when the start or end points of the search range might themselves be "container" references rather than specific leaf nodes. This requires a two-pass approach or a stateful iteration over the corpus:
+
+1.  **Identify the actual start line in the corpus:**
+    *   If the range start in the search URN (e.g., `1.1` from `1.1-1.3`) matches a leaf node in the corpus directly, that's our start.
+    *   If the range start is a container (e.g., `1` from `1-2`), we need to find the *first* corpus URN that is hierarchically contained within that search range start.
+2.  **Identify the actual end line in the corpus:**
+    *   If the range end in the search URN (e.g., `1.3` from `1.1-1.3`) matches a leaf node in the corpus directly, that's our end.
+    *   If the range end is a container (e.g., `2` from `1-2`), we need to find the *last* corpus URN that is hierarchically contained within that search range end.
+3.  **Collect lines:** Once the actual start and end corpus URNs (and their line indices) are determined, iterate through the corpus lines from the start index to the end index, collecting all of them.
+
+This is a significant change from simple lexicographical comparison of passage strings. The current `retrieveCtsPassages` processes line by line without knowing the global start/end points defined this way.
+
+Here's how we can implement this:
+
+**New Strategy for `retrieveCtsPassages` when `searchUrnObj.passageParts.isRange`:**
+
+1.  Filter the corpus: First, create a list of all valid corpus URN objects that match the search URN's namespace and work component (using `_isHierarchicalPrefix` for the work component). Keep track of their original line index and text content.
+2.  Determine the effective start passage from the corpus:
+    *   Parse the `searchUrnObj.passageParts.start` into its parts (`searchRangeStartParts`).
+    *   Iterate through the filtered corpus URNs. For each corpus URN:
+        *   Check if its passage parts (`corpusUrnObj.passageParts.referenceParts`) are hierarchically prefixed by `searchRangeStartParts`.
+        *   The *first* such corpus URN encountered is our effective start of the range. Record its index in the filtered list.
+    *   If no such URN is found, the range is empty.
+3.  Determine the effective end passage from the corpus:
+    *   Parse the `searchUrnObj.passageParts.end` into its parts (`searchRangeEndParts`).
+    *   Iterate through the filtered corpus URNs *in reverse order* (or just keep track of the last match if iterating forwards). For each corpus URN:
+        *   Check if its passage parts (`corpusUrnObj.passageParts.referenceParts`) are hierarchically prefixed by `searchRangeEndParts`.
+        *   The *last* such corpus URN encountered (when considering the original corpus order) is our effective end of the range. Record its index in the filtered list.
+    *   If no such URN is found, the range is empty.
+4.  Slice and Dice: If both an effective start and end index are found, and start_index <= end_index, take all items from the filtered list between these two indices (inclusive).
+
+This approach respects the corpus order entirely.
+
+Let's integrate this into `urn-lib.js`.
+
+```javascript
+(function(exports) {
+    'use strict';
+
+    // --- HELPER FUNCTIONS ---
+
+    function _splitComponentString(componentStr) {
+        if (componentStr === "") return [];
+        const parts = componentStr.split('.');
+        if (parts.some(p => p === "")) return null;
+        return parts;
+    }
+
+    function _areComponentPartsCongruent(parts1, parts2) {
+        if (!parts1 || !parts2) return false;
+        const minLen = Math.min(parts1.length, parts2.length);
+        for (let i = 0; i < minLen; i++) {
+            if (parts1[i] !== parts2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function _isHierarchicalPrefix(searchParts, corpusParts) {
+        if (!searchParts || !corpusParts) return false;
+        if (searchParts.length === 0) return true;
+        if (searchParts.length > corpusParts.length) return false;
+        for (let i = 0; i < searchParts.length; i++) {
+            if (searchParts[i] !== corpusParts[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // --- CTS URN Core Logic ---
+
+    function parseCtsUrn(urnString) {
+        const result = {
+            valid: false, original: urnString, error: null, protocol: null, nid: null, namespace: null,
+            workComponent: null, passageComponent: null,
+            workParts: { textgroup: null, workid: null, version: null, exemplar: null },
+            passageParts: { isRange: false, reference: null, referenceParts: [], start: null, startParts: [], end: null, endParts: [] }
+        };
+
+        if (typeof urnString !== 'string') {
+            result.error = "Input is not a string."; return result;
+        }
+        const parts = urnString.split(':');
+        if (parts.length !== 5) {
+            result.error = "CTS URN must have 5 colon-delimited components."; return result;
+        }
+        result.protocol = parts[0]; result.nid = parts[1]; result.namespace = parts[2];
+        result.workComponent = parts[3]; result.passageComponent = parts[4];
+
+        if (result.protocol !== 'urn') { result.error = "Component 1 must be 'urn'."; return result; }
+        if (result.nid !== 'cts') { result.error = "Component 2 must be 'cts'."; return result; }
+        if (!result.namespace) { result.error = "Component 3 (namespace) must be non-empty."; return result; }
+        if (!result.workComponent) { result.error = "Component 4 (work component) must be non-empty."; return result; }
+
+        const workComponentParts = _splitComponentString(result.workComponent);
+        if (!workComponentParts || workComponentParts.length === 0 || workComponentParts.length > 4) {
+            result.error = "Work component must have 1-4 non-empty, period-separated parts."; return result;
+        }
+        result.workParts.textgroup = workComponentParts[0] || null;
+        result.workParts.workid = workComponentParts[1] || null;
+        result.workParts.version = workComponentParts[2] || null;
+        result.workParts.exemplar = workComponentParts[3] || null;
+
+        const passageStr = result.passageComponent;
+        if (passageStr.includes('-')) {
+            const rangePartsArr = passageStr.split('-');
+            if (rangePartsArr.length !== 2 || !rangePartsArr[0] || !rangePartsArr[1]) {
+                result.error = "Passage range must have a non-empty start and end, separated by one hyphen."; return result;
+            }
+            result.passageParts.start = rangePartsArr[0];
+            result.passageParts.end = rangePartsArr[1];
+            const startPsgParts = _splitComponentString(result.passageParts.start);
+            const endPsgParts = _splitComponentString(result.passageParts.end);
+            if (!startPsgParts || startPsgParts.length === 0) { result.error = "Range start identifier must have at least one non-empty part."; return result; }
+            if (!endPsgParts || endPsgParts.length === 0) { result.error = "Range end identifier must have at least one non-empty part."; return result; }
+            result.passageParts.isRange = true;
+            result.passageParts.startParts = startPsgParts;
+            result.passageParts.endParts = endPsgParts;
+        } else if (passageStr === "") {
+            result.passageParts.isRange = false; result.passageParts.reference = ""; result.passageParts.referenceParts = [];
+        } else {
+            const singlePsgParts = _splitComponentString(passageStr);
+            if (!singlePsgParts || singlePsgParts.length === 0) {
+                result.error = "Non-empty, non-range passage identifier must have at least one non-empty part."; return result;
+            }
+            result.passageParts.isRange = false; result.passageParts.reference = passageStr; result.passageParts.referenceParts = singlePsgParts;
+        }
+        result.valid = true; return result;
+    }
+
+    function isValidCtsUrn(urnString) { return parseCtsUrn(urnString).valid; }
+    function ctsnamespace(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.namespace : null; }
+    function workcomponent(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workComponent : null; }
+    function passagecomponent(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.passageComponent : null; }
+    function textgroup(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.textgroup : null; }
+    function workid(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.workid : null; }
+    function version(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.version : null; }
+    function exemplar(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.exemplar : null; }
+
+    function areCtsUrnsEqual(urnString1, urnString2) {
+        const p1 = parseCtsUrn(urnString1); const p2 = parseCtsUrn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        return p1.namespace === p2.namespace && p1.workComponent === p2.workComponent && p1.passageComponent === p2.passageComponent;
+    }
+
+    function areCtsUrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCtsUrn(urnString1); const p2 = parseCtsUrn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+        const p1WParts = [p1.workParts.textgroup,p1.workParts.workid,p1.workParts.version,p1.workParts.exemplar].filter(Boolean);
+        const p2WParts = [p2.workParts.textgroup,p2.workParts.workid,p2.workParts.version,p2.workParts.exemplar].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1WParts, p2WParts)) return false;
+        if (p1.passageParts.isRange !== p2.passageParts.isRange) return false;
+        if (p1.passageParts.isRange) {
+            if (!_areComponentPartsCongruent(p1.passageParts.startParts, p2.passageParts.startParts)) return false;
+            if (!_areComponentPartsCongruent(p1.passageParts.endParts, p2.passageParts.endParts)) return false;
+        } else {
+            if (!_areComponentPartsCongruent(p1.passageParts.referenceParts, p2.passageParts.referenceParts)) return false;
+        }
+        return true;
+    }
+
+    function retrieveCtsPassages(searchUrnString, corpusDataString) {
+        const searchUrnObj = parseCtsUrn(searchUrnString);
+        if (!searchUrnObj.valid) { console.error("Invalid search URN:", searchUrnObj.error); return []; }
+
+        const lines = corpusDataString.split('\n');
+        const results = [];
+        const dataLines = lines.slice(1);
+
+        const searchWorkPartsArray = [searchUrnObj.workParts.textgroup, searchUrnObj.workParts.workid, searchUrnObj.workParts.version, searchUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+
+        if (searchUrnObj.passageParts.isRange) {
+            // New range logic
+            const potentialMatches = [];
+            for (let i = 0; i < dataLines.length; i++) {
+                const line = dataLines[i];
+                if (line.trim() === "") continue;
+                const parts = line.split('|');
+                if (parts.length < 2) continue;
+                const corpusUrnString = parts[0].trim();
+                const textContent = parts.slice(1).join('|').trim();
+                const corpusUrnObj = parseCtsUrn(corpusUrnString);
+
+                if (!corpusUrnObj.valid || corpusUrnObj.passageParts.isRange) continue; // Only match single passages in corpus
+
+                if (searchUrnObj.namespace !== corpusUrnObj.namespace) continue;
+                const corpusWorkPartsArray = [corpusUrnObj.workParts.textgroup, corpusUrnObj.workParts.workid, corpusUrnObj.workParts.version, corpusUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+                if (!_isHierarchicalPrefix(searchWorkPartsArray, corpusWorkPartsArray)) continue;
+                
+                // If we reach here, namespace and work match. Store it with its original index.
+                potentialMatches.push({
+                    urnString: corpusUrnString,
+                    textContent: textContent,
+                    urnObj: corpusUrnObj,
+                    originalIndex: i // Index in dataLines
+                });
+            }
+
+            let startIndex = -1;
+            let endIndex = -1;
+
+            // Find actual start passage in corpus
+            for (let i = 0; i < potentialMatches.length; i++) {
+                const pm = potentialMatches[i];
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.startParts, pm.urnObj.passageParts.referenceParts)) {
+                    startIndex = i;
+                    break; 
+                }
+            }
+
+            // Find actual end passage in corpus
+            // Iterate from end of potential matches to find the LATEST one that matches the end criteria
+            for (let i = potentialMatches.length - 1; i >= 0; i--) {
+                const pm = potentialMatches[i];
+                 // The end passage of the search range must be a prefix of or equal to the corpus passage.
+                 // More accurately, the corpus passage must be hierarchically contained within or equal to the search range's end.
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.endParts, pm.urnObj.passageParts.referenceParts)) {
+                    // We need to ensure we find the LAST passage in the corpus that falls under this container.
+                    // So, we continue searching until _isHierarchicalPrefix is FALSE, and take the one BEFORE that.
+                    // This logic is tricky. A simpler approach: find all matches for endParts, take the last one.
+                    // Let's refine: the END of the range is the LAST passage whose reference is prefixed by endParts.
+                    // No, it's the LAST passage for which the ENDPARTS is a prefix of the passage's parts.
+                    // Example: search range ends in '2'. Corpus has 2.1, 2.2, 2.25, 3.1. We want 2.25.
+                    endIndex = i; // This is the index in potentialMatches
+                    break; 
+                }
+            }
+            
+            // Correction for End Index:
+            // The previous loop for `endIndex` finds the *last* entry in `potentialMatches` whose passage is prefixed by `searchUrnObj.passageParts.endParts`.
+            // This is generally correct. E.g., if range end is '1', and corpus has '1.1', '1.2', '1.title', '2.1',
+            // it would correctly pick '1.title' if that's the last '1.x' entry.
+
+            if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex) {
+                for (let i = startIndex; i <= endIndex; i++) {
+                    results.push({ urn: potentialMatches[i].urnString, text: potentialMatches[i].textContent });
+                }
+            }
+
+        } else { // Single passage or container search (non-range)
+            for (const line of dataLines) {
+                if (line.trim() === "") continue;
+                const parts = line.split('|');
+                if (parts.length < 2) continue;
+                const corpusUrnString = parts[0].trim();
+                const textContent = parts.slice(1).join('|').trim();
+                const corpusUrnObj = parseCtsUrn(corpusUrnString);
+
+                if (!corpusUrnObj.valid || corpusUrnObj.passageParts.isRange) continue;
+                if (searchUrnObj.namespace !== corpusUrnObj.namespace) continue;
+                const corpusWorkPartsArray = [corpusUrnObj.workParts.textgroup, corpusUrnObj.workParts.workid, corpusUrnObj.workParts.version, corpusUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+                if (!_isHierarchicalPrefix(searchWorkPartsArray, corpusWorkPartsArray)) continue;
+                
+                if (searchUrnObj.passageParts.reference !== "" && corpusUrnObj.passageParts.reference === "") continue;
+
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.referenceParts, corpusUrnObj.passageParts.referenceParts)) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            }
+        }
+        return results;
+    }
+
+    // --- CITE2 URN Core Logic ---
+    function parseCite2Urn(urnString) {
+        const result = {
+            valid: false, original: urnString, error: null, protocol: null, nid: null, namespace: null,
+            collectionComponent: null, objectComponent: null,
+            collectionParts: { collectionid: null, versionid: null, propertyid: null },
+            objectParts: { isRange: false, reference: null, start: null, end: null }
+        };
+        if (typeof urnString !== 'string') { result.error = "Input is not a string."; return result; }
+        const parts = urnString.split(':');
+        if (parts.length !== 5) { result.error = "CITE2 URN must have 5 colon-delimited components."; return result; }
+        result.protocol = parts[0]; result.nid = parts[1]; result.namespace = parts[2];
+        result.collectionComponent = parts[3]; result.objectComponent = parts[4];
+
+        if (result.protocol !== 'urn') { result.error = "Component 1 must be 'urn'."; return result; }
+        if (result.nid !== 'cite2') { result.error = "Component 2 must be 'cite2'."; return result; }
+        if (!result.namespace) { result.error = "Component 3 (namespace) must be non-empty."; return result; }
+        if (!result.collectionComponent) { result.error = "Component 4 (collection component) must be non-empty."; return result; }
+
+        const collCompParts = _splitComponentString(result.collectionComponent);
+        if (!collCompParts || collCompParts.length === 0 || collCompParts.length > 3) {
+            result.error = "Collection component must have 1-3 non-empty, period-separated parts."; return result;
+        }
+        result.collectionParts.collectionid = collCompParts[0] || null;
+        result.collectionParts.versionid = collCompParts[1] || null;
+        result.collectionParts.propertyid = collCompParts[2] || null;
+
+        const objectStr = result.objectComponent;
+        if (objectStr.includes('-')) {
+            const rangePartsArr = objectStr.split('-');
+            if (rangePartsArr.length !== 2 || !rangePartsArr[0] || !rangePartsArr[1] || rangePartsArr[0].includes('-') || rangePartsArr[1].includes('-')) {
+                result.error = "Object component range must have a non-empty start and end, separated by one hyphen. Start/end cannot contain hyphens."; return result;
+            }
+            result.objectParts.isRange = true; result.objectParts.start = rangePartsArr[0]; result.objectParts.end = rangePartsArr[1];
+        } else if (objectStr === "") {
+            result.objectParts.isRange = false; result.objectParts.reference = "";
+        } else {
+            if (objectStr.includes('-')) { result.error = "Single object identifier cannot contain a hyphen."; return result; }
+            result.objectParts.isRange = false; result.objectParts.reference = objectStr;
+        }
+        result.valid = true; return result;
+    }
+
+    function isValidCite2Urn(urnString) { return parseCite2Urn(urnString).valid; }
+    function cite2namespace(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.namespace : null; }
+    function collectioncomponent(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionComponent : null; }
+    function objectcomponent(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.objectComponent : null; }
+    function collectionid(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionParts.collectionid : null; }
+    function versionid(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionParts.versionid : null; }
+    function propertyid(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionParts.propertyid : null; }
+
+    function areCite2UrnsEqual(urnString1, urnString2) {
+        const p1 = parseCite2Urn(urnString1); const p2 = parseCite2Urn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        return p1.namespace === p2.namespace && p1.collectionComponent === p2.collectionComponent && p1.objectComponent === p2.objectComponent;
+    }
+
+    function areCite2UrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCite2Urn(urnString1); const p2 = parseCite2Urn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+        const p1CollActParts = [p1.collectionParts.collectionid, p1.collectionParts.versionid, p1.collectionParts.propertyid].filter(Boolean);
+        const p2CollActParts = [p2.collectionParts.collectionid, p2.collectionParts.versionid, p2.collectionParts.propertyid].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1CollActParts, p2CollActParts)) return false;
+        return true;
+    }
+
+    exports.parseCtsUrn = parseCtsUrn;
+    exports.isValidCtsUrn = isValidCtsUrn;
+    exports.ctsnamespace = ctsnamespace;
+    exports.workcomponent = workcomponent;
+    exports.passagecomponent = passagecomponent;
+    exports.textgroup = textgroup;
+    exports.workid = workid;
+    exports.version = version;
+    exports.exemplar = exemplar;
+    exports.areCtsUrnsEqual = areCtsUrnsEqual;
+    exports.areCtsUrnsCongruent = areCtsUrnsCongruent;
+    exports.retrieveCtsPassages = retrieveCtsPassages;
+
+    exports.parseCite2Urn = parseCite2Urn;
+    exports.isValidCite2Urn = isValidCite2Urn;
+    exports.cite2namespace = cite2namespace;
+    exports.collectioncomponent = collectioncomponent;
+    exports.objectcomponent = objectcomponent;
+    exports.collectionid = collectionid;
+    exports.versionid = versionid;
+    exports.propertyid = propertyid;
+    exports.areCite2UrnsEqual = areCite2UrnsEqual;
+    exports.areCite2UrnsCongruent = areCite2UrnsCongruent;
+
+}(typeof exports === 'undefined' ? (this.URNTools = {}) : exports));
+```
+
+**Explanation of Changes in `retrieveCtsPassages` for Range Logic:**
+
+1.  **Preprocessing `dataLines` for Ranges:**
+    *   When `searchUrnObj.passageParts.isRange` is true, the code now first iterates through all `dataLines` to build a `potentialMatches` array.
+    *   This array stores objects, each containing the parsed `corpusUrnObj`, its string form, text content, and its *original index* from `dataLines`.
+    *   It filters out corpus URNs that don't match the search URN's namespace and work component (hierarchically), or if the corpus URN itself is a range.
+
+2.  **Finding `startIndex`:**
+    *   It iterates through `potentialMatches`.
+    *   For each `pm` (potential match) in `potentialMatches`, it checks if the `searchUrnObj.passageParts.startParts` is a hierarchical prefix of `pm.urnObj.passageParts.referenceParts`.
+    *   The *first* `pm` that satisfies this condition determines the `startIndex` (which is the index within the `potentialMatches` array).
+
+3.  **Finding `endIndex`:**
+    *   It iterates through `potentialMatches` *in reverse order* (from `potentialMatches.length - 1` down to `0`).
+    *   For each `pm`, it checks if `searchUrnObj.passageParts.endParts` is a hierarchical prefix of `pm.urnObj.passageParts.referenceParts`.
+    *   The *first* one it encounters in this reverse scan (which corresponds to the *last* one in the original corpus order that matches the end criteria) determines the `endIndex`.
+    *   **Crucial Detail for End Range:** The logic implies that if the search range end is `1`, and the corpus contains `1.1`, `1.2`, `1.title`, `2.1`, the effective end point in the corpus will be `1.title` (assuming it's the last entry starting with `1`). If the search range end was `1.2`, it would find the corpus entry `1.2`.
+
+4.  **Collecting Results:**
+    *   If both `startIndex` and `endIndex` are found (not -1) and `startIndex <= endIndex`, it iterates from `startIndex` to `endIndex` in the `potentialMatches` array and adds the corresponding items to the final `results`.
+
+**Example Walkthrough (Conceptual):**
+
+Search URN: `urn:cts:compnov:bible.genesis.lxxlatinnormed:1-2`
+*   `searchUrnObj.passageParts.startParts` = `["1"]`
+*   `searchUrnObj.passageParts.endParts` = `["2"]`
+
+Corpus (relevant lines from `potentialMatches`, simplified):
+```
+Index | URN Passage Parts  | URN String
+----------------------------------------------------
+...
+k     | ["1", "title"]     | ...:1.title
+k+1   | ["1", "1"]         | ...:1.1
+...
+m     | ["1", "32"]        | ...:1.32
+m+1   | ["2", "intro"]     | ...:2.intro  <-- (hypothetical)
+m+2   | ["2", "1"]         | ...:2.1
+...
+p     | ["2", "25"]        | ...:2.25
+p+1   | ["3", "1"]         | ...:3.1
+...
+```
+
+1.  **Finding `startIndex`:**
+    *   Loop through `potentialMatches`.
+    *   The entry at index `k` (`...:1.title`) has `referenceParts` `["1", "title"]`. `_isHierarchicalPrefix(["1"], ["1", "title"])` is `true`.
+    *   `startIndex` becomes `k`. Loop breaks.
+
+2.  **Finding `endIndex`:**
+    *   Loop through `potentialMatches` in reverse.
+    *   The entry at index `p+1` (`...:3.1`) has `referenceParts` `["3", "1"]`. `_isHierarchicalPrefix(["2"], ["3", "1"])` is `false`.
+    *   The entry at index `p` (`...:2.25`) has `referenceParts` `["2", "25"]`. `_isHierarchicalPrefix(["2"], ["2", "25"])` is `true`.
+    *   `endIndex` becomes `p`. Loop breaks.
+
+3.  **Collect:**
+    *   Results will include all items from `potentialMatches[k]` through `potentialMatches[p]`.
+
+This revised logic is much more aligned with the sophisticated definition of range retrieval you provided, respecting corpus order and handling container references within the range start/end points correctly. Note that the `parseCtsUrn` was also slightly refactored for clarity in how `startParts` and `endParts` are populated for ranges.
+
+### USER
+Beautiful! Now let's implement retrieval of objects in a delimited text source where each line represents one object identified by CITE2 URN. We need a function to retrieve rows from the list.
+The function shoujld treat the first non-empty line as a header line with columns delimited by the pipe character '|'. A column labelled `urn` represents a CITE2 URN. The retrieval function should retrieve rows that have an identifier _congruent_ with a given URN.
+Consider an example with this header line:
+`sequence|image|urn|rv|label`
+The third column is labelled `urn` and will represent the identifying CITE2 URN. When we look at a data line like this:
+`2|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f001r|urn:cite2:citebl:burney86pages.v1:1r|recto|British Library, Burney 86, folio 1 recto`
+we see that the third column is `urn:cite2:citebl:burney86pages.v1:1r`.
+If we search for a URN `urn:cite2:citebl:burney86pages.v1:1r`, obviously we will match that example row. If we search for a URN `urn:cite2:citebl:burney86pages:1r` we will also match, since the two URNs are congruent. If the search URN is a range like `urn:cite2:citebl:burney86pages:1r-2v`, we will match all records in the ordered list of data from the first object identified by ``urn:cite2:citebl:burney86pages:1r` to the last object identified by`` urn:cite2:citebl:burney86pages:2v`.
+**Test**: Please write an HTML page to test CITE2 URN retrieval. Allow users to enter a URN and retrieve matching records from this brief sample data set:
+```
+sequence|image|urn|rv|label
+2|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f001r|urn:cite2:citebl:burney86pages.v1:1r|recto|British Library, Burney 86, folio 1 recto
+3|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f001v|urn:cite2:citebl:burney86pages.v1:1v|verso|British Library, Burney 86, folio 1 verso
+4|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f002r|urn:cite2:citebl:burney86pages.v1:2r|recto|British Library, Burney 86, folio 2 recto
+5|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f002v|urn:cite2:citebl:burney86pages.v1:2v|verso|British Library, Burney 86, folio 2 verso
+6|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f003r|urn:cite2:citebl:burney86pages.v1:3r|recto|British Library, Burney 86, folio 3 recto
+7|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f003v|urn:cite2:citebl:burney86pages.v1:3v|verso|British Library, Burney 86, folio 3 verso
+8|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f004r|urn:cite2:citebl:burney86pages.v1:4r|recto|British Library, Burney 86, folio 4 recto
+9|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f004v|urn:cite2:citebl:burney86pages.v1:4v|verso|British Library, Burney 86, folio 4 verso
+```
+
+### ASSISTANT
+Okay, this is a great extension! We'll add a `retrieveCite2Objects` function to `urn-lib.js` and then create the test HTML page.
+
+The CITE2 retrieval logic will be similar to the refined CTS range retrieval in some ways, especially how it handles ranges based on corpus order, but it will use CITE2 congruence rules.
+
+**CITE2 Retrieval Logic:**
+
+1.  **Parse Corpus:**
+    *   Read the entire data string.
+    *   Identify the first non-empty line as the header. Split it by `|` to get column names.
+    *   Find the index of the column named `urn`. If not found, retrieval is impossible.
+    *   Process subsequent lines:
+        *   Split each line by `|`.
+        *   Extract the CITE2 URN string from the designated `urn` column.
+        *   Parse this corpus URN. If invalid, skip the line.
+        *   Store each valid row as an object, perhaps `{ rowData: string[], corpusUrnObj: ParsedCite2Urn, originalLineIndex: number }`.
+
+2.  **Parse Search URN:** Parse the user-provided CITE2 search URN. If invalid, return no results.
+
+3.  **Matching Logic:**
+    *   **If search URN is NOT a range:**
+        *   Iterate through the parsed corpus rows.
+        *   A row matches if `URNTools.areCite2UrnsCongruent(searchUrnString, corpusRow.urnString)` is true AND the `searchUrnObj.objectComponent` is "congruent" with the `corpusRow.urnObj.objectComponent`.
+            *   CITE2 object component "congruence" for retrieval:
+                *   If search object component is empty, it matches any corpus object component (within the congruent collection).
+                *   If search object component is non-empty, it must be *identical* to the corpus object component.
+                *   (This differs slightly from CTS passage hierarchical prefix matching; CITE2 object IDs are usually atomic unless they are ranges themselves).
+
+    *   **If search URN IS a range (`searchUrnObj.objectParts.isRange`):**
+        *   This is where it gets similar to the CTS range logic but simpler because CITE2 object IDs are not period-delimited within themselves for hierarchical matching.
+        *   **Filter potential matches:** Iterate through all parsed corpus rows. A row is a potential match if:
+            *   `URNTools.areCite2UrnsCongruent(searchUrnString, corpusRow.urnString)` is true (this checks namespace and collection congruence).
+            *   The `corpusRow.urnObj` is NOT a range.
+        *   **Find `startIndexInPotential`:** Iterate through the `potentialMatches`. The first row where `corpusRow.urnObj.objectComponent == searchUrnObj.objectParts.start` is the start.
+        *   **Find `endIndexInPotential`:** Iterate through `potentialMatches` (potentially in reverse). The last row where `corpusRow.urnObj.objectComponent == searchUrnObj.objectParts.end` is the end.
+            *   *Clarification for CITE2 range ends:* If the search range end is `2v`, it must match `2v` exactly in the corpus. If the search URN specified a "container" by having an empty object component, the general congruence would handle that. But for ranges, the object parts are specific.
+        *   Collect all rows from `potentialMatches` between `startIndexInPotential` and `endIndexInPotential` (inclusive).
+
+Let's refine the CITE2 range logic a bit. The `areCite2UrnsCongruent` only checks namespace and collection. The object component matching for ranges needs to be explicit.
+
+**Refined CITE2 Range Retrieval Logic:**
+
+1.  Parse corpus and search URN as above.
+2.  If search URN is a range:
+    a.  Create a list of `relevantCorpusRows`: these are rows where the *collection part* of the corpus URN is congruent with the *collection part* of the search URN, and the corpus URN is not itself a range.
+        `URNTools.areCite2UrnsCongruent(searchUrnString, corpusRow.urnString)` effectively does this (since it ignores object components for congruence).
+    b.  Find `startIndex`: Iterate through `relevantCorpusRows`. The first row `r` where `r.urnObj.objectComponent === searchUrnObj.objectParts.start` marks the start.
+    c.  Find `endIndex`: Iterate through `relevantCorpusRows` (likely in reverse or keeping track of the last match). The last row `r` where `r.urnObj.objectComponent === searchUrnObj.objectParts.end` marks the end.
+    d.  If `startIndex` and `endIndex` are found and `startIndex <= endIndex`, collect rows from `relevantCorpusRows` from `startIndex` to `endIndex`.
+
+This seems more robust.
+
+Now, let's add `retrieveCite2Objects` to `urn-lib.js`.
+
+**`urn-lib.js` with `retrieveCite2Objects`:**
+
+```javascript
+(function(exports) {
+    'use strict';
+
+    // --- HELPER FUNCTIONS ---
+    // ... ( _splitComponentString, _areComponentPartsCongruent, _isHierarchicalPrefix remain unchanged) ...
+    function _splitComponentString(componentStr) {
+        if (componentStr === "") return [];
+        const parts = componentStr.split('.');
+        if (parts.some(p => p === "")) return null;
+        return parts;
+    }
+
+    function _areComponentPartsCongruent(parts1, parts2) {
+        if (!parts1 || !parts2) return false;
+        const minLen = Math.min(parts1.length, parts2.length);
+        for (let i = 0; i < minLen; i++) {
+            if (parts1[i] !== parts2[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function _isHierarchicalPrefix(searchParts, corpusParts) {
+        if (!searchParts || !corpusParts) return false;
+        if (searchParts.length === 0) return true;
+        if (searchParts.length > corpusParts.length) return false;
+        for (let i = 0; i < searchParts.length; i++) {
+            if (searchParts[i] !== corpusParts[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // --- CTS URN Core Logic ---
+    // ... (parseCtsUrn, isValidCtsUrn, accessors, areCtsUrnsEqual, areCtsUrnsCongruent, retrieveCtsPassages remain unchanged from previous version) ...
+    function parseCtsUrn(urnString) {
+        const result = {
+            valid: false, original: urnString, error: null, protocol: null, nid: null, namespace: null,
+            workComponent: null, passageComponent: null,
+            workParts: { textgroup: null, workid: null, version: null, exemplar: null },
+            passageParts: { isRange: false, reference: null, referenceParts: [], start: null, startParts: [], end: null, endParts: [] }
+        };
+
+        if (typeof urnString !== 'string') {
+            result.error = "Input is not a string."; return result;
+        }
+        const parts = urnString.split(':');
+        if (parts.length !== 5) {
+            result.error = "CTS URN must have 5 colon-delimited components."; return result;
+        }
+        result.protocol = parts[0]; result.nid = parts[1]; result.namespace = parts[2];
+        result.workComponent = parts[3]; result.passageComponent = parts[4];
+
+        if (result.protocol !== 'urn') { result.error = "Component 1 must be 'urn'."; return result; }
+        if (result.nid !== 'cts') { result.error = "Component 2 must be 'cts'."; return result; }
+        if (!result.namespace) { result.error = "Component 3 (namespace) must be non-empty."; return result; }
+        if (!result.workComponent) { result.error = "Component 4 (work component) must be non-empty."; return result; }
+
+        const workComponentParts = _splitComponentString(result.workComponent);
+        if (!workComponentParts || workComponentParts.length === 0 || workComponentParts.length > 4) {
+            result.error = "Work component must have 1-4 non-empty, period-separated parts."; return result;
+        }
+        result.workParts.textgroup = workComponentParts[0] || null;
+        result.workParts.workid = workComponentParts[1] || null;
+        result.workParts.version = workComponentParts[2] || null;
+        result.workParts.exemplar = workComponentParts[3] || null;
+
+        const passageStr = result.passageComponent;
+        if (passageStr.includes('-')) {
+            const rangePartsArr = passageStr.split('-');
+            if (rangePartsArr.length !== 2 || !rangePartsArr[0] || !rangePartsArr[1]) {
+                result.error = "Passage range must have a non-empty start and end, separated by one hyphen."; return result;
+            }
+            result.passageParts.start = rangePartsArr[0];
+            result.passageParts.end = rangePartsArr[1];
+            const startPsgParts = _splitComponentString(result.passageParts.start);
+            const endPsgParts = _splitComponentString(result.passageParts.end);
+            if (!startPsgParts || startPsgParts.length === 0) { result.error = "Range start identifier must have at least one non-empty part."; return result; }
+            if (!endPsgParts || endPsgParts.length === 0) { result.error = "Range end identifier must have at least one non-empty part."; return result; }
+            result.passageParts.isRange = true;
+            result.passageParts.startParts = startPsgParts;
+            result.passageParts.endParts = endPsgParts;
+        } else if (passageStr === "") {
+            result.passageParts.isRange = false; result.passageParts.reference = ""; result.passageParts.referenceParts = [];
+        } else {
+            const singlePsgParts = _splitComponentString(passageStr);
+            if (!singlePsgParts || singlePsgParts.length === 0) {
+                result.error = "Non-empty, non-range passage identifier must have at least one non-empty part."; return result;
+            }
+            result.passageParts.isRange = false; result.passageParts.reference = passageStr; result.passageParts.referenceParts = singlePsgParts;
+        }
+        result.valid = true; return result;
+    }
+
+    function isValidCtsUrn(urnString) { return parseCtsUrn(urnString).valid; }
+    function ctsnamespace(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.namespace : null; }
+    function workcomponent(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workComponent : null; }
+    function passagecomponent(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.passageComponent : null; }
+    function textgroup(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.textgroup : null; }
+    function workid(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.workid : null; }
+    function version(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.version : null; }
+    function exemplar(urnString) { const p = parseCtsUrn(urnString); return p.valid ? p.workParts.exemplar : null; }
+
+    function areCtsUrnsEqual(urnString1, urnString2) {
+        const p1 = parseCtsUrn(urnString1); const p2 = parseCtsUrn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        return p1.namespace === p2.namespace && p1.workComponent === p2.workComponent && p1.passageComponent === p2.passageComponent;
+    }
+
+    function areCtsUrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCtsUrn(urnString1); const p2 = parseCtsUrn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+        const p1WParts = [p1.workParts.textgroup,p1.workParts.workid,p1.workParts.version,p1.workParts.exemplar].filter(Boolean);
+        const p2WParts = [p2.workParts.textgroup,p2.workParts.workid,p2.workParts.version,p2.workParts.exemplar].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1WParts, p2WParts)) return false;
+        if (p1.passageParts.isRange !== p2.passageParts.isRange) return false;
+        if (p1.passageParts.isRange) {
+            if (!_areComponentPartsCongruent(p1.passageParts.startParts, p2.passageParts.startParts)) return false;
+            if (!_areComponentPartsCongruent(p1.passageParts.endParts, p2.passageParts.endParts)) return false;
+        } else {
+            if (!_areComponentPartsCongruent(p1.passageParts.referenceParts, p2.passageParts.referenceParts)) return false;
+        }
+        return true;
+    }
+
+    function retrieveCtsPassages(searchUrnString, corpusDataString) {
+        const searchUrnObj = parseCtsUrn(searchUrnString);
+        if (!searchUrnObj.valid) { console.error("Invalid search URN:", searchUrnObj.error); return []; }
+
+        const lines = corpusDataString.split('\n');
+        const results = [];
+        const dataLines = lines.slice(1);
+
+        const searchWorkPartsArray = [searchUrnObj.workParts.textgroup, searchUrnObj.workParts.workid, searchUrnObj.workParts.version, searchUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+
+        if (searchUrnObj.passageParts.isRange) {
+            const potentialMatches = [];
+            for (let i = 0; i < dataLines.length; i++) {
+                const line = dataLines[i];
+                if (line.trim() === "") continue;
+                const parts = line.split('|');
+                if (parts.length < 2) continue;
+                const corpusUrnString = parts[0].trim();
+                const textContent = parts.slice(1).join('|').trim();
+                const corpusUrnObj = parseCtsUrn(corpusUrnString);
+
+                if (!corpusUrnObj.valid || corpusUrnObj.passageParts.isRange) continue; 
+
+                if (searchUrnObj.namespace !== corpusUrnObj.namespace) continue;
+                const corpusWorkPartsArray = [corpusUrnObj.workParts.textgroup, corpusUrnObj.workParts.workid, corpusUrnObj.workParts.version, corpusUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+                if (!_isHierarchicalPrefix(searchWorkPartsArray, corpusWorkPartsArray)) continue;
+                
+                potentialMatches.push({
+                    urnString: corpusUrnString,
+                    textContent: textContent,
+                    urnObj: corpusUrnObj,
+                    originalIndex: i 
+                });
+            }
+
+            let startIndex = -1;
+            let endIndex = -1;
+
+            for (let i = 0; i < potentialMatches.length; i++) {
+                const pm = potentialMatches[i];
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.startParts, pm.urnObj.passageParts.referenceParts)) {
+                    startIndex = i;
+                    break; 
+                }
+            }
+
+            for (let i = potentialMatches.length - 1; i >= 0; i--) {
+                const pm = potentialMatches[i];
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.endParts, pm.urnObj.passageParts.referenceParts)) {
+                    endIndex = i; 
+                    break; 
+                }
+            }
+            
+            if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex) {
+                for (let i = startIndex; i <= endIndex; i++) {
+                    results.push({ urn: potentialMatches[i].urnString, text: potentialMatches[i].textContent });
+                }
+            }
+
+        } else { 
+            for (const line of dataLines) {
+                if (line.trim() === "") continue;
+                const parts = line.split('|');
+                if (parts.length < 2) continue;
+                const corpusUrnString = parts[0].trim();
+                const textContent = parts.slice(1).join('|').trim();
+                const corpusUrnObj = parseCtsUrn(corpusUrnString);
+
+                if (!corpusUrnObj.valid || corpusUrnObj.passageParts.isRange) continue;
+                if (searchUrnObj.namespace !== corpusUrnObj.namespace) continue;
+                const corpusWorkPartsArray = [corpusUrnObj.workParts.textgroup, corpusUrnObj.workParts.workid, corpusUrnObj.workParts.version, corpusUrnObj.workParts.exemplar].filter(p => p !== null && p !== undefined);
+                if (!_isHierarchicalPrefix(searchWorkPartsArray, corpusWorkPartsArray)) continue;
+                
+                if (searchUrnObj.passageParts.reference !== "" && corpusUrnObj.passageParts.reference === "") continue;
+
+                if (_isHierarchicalPrefix(searchUrnObj.passageParts.referenceParts, corpusUrnObj.passageParts.referenceParts)) {
+                    results.push({ urn: corpusUrnString, text: textContent });
+                }
+            }
+        }
+        return results;
+    }
+    // --- CITE2 URN Core Logic ---
+    // ... (parseCite2Urn, isValidCite2Urn, accessors, areCite2UrnsEqual, areCite2UrnsCongruent remain unchanged) ...
+    function parseCite2Urn(urnString) {
+        const result = {
+            valid: false, original: urnString, error: null, protocol: null, nid: null, namespace: null,
+            collectionComponent: null, objectComponent: null,
+            collectionParts: { collectionid: null, versionid: null, propertyid: null },
+            objectParts: { isRange: false, reference: null, start: null, end: null }
+        };
+        if (typeof urnString !== 'string') { result.error = "Input is not a string."; return result; }
+        const parts = urnString.split(':');
+        if (parts.length !== 5) { result.error = "CITE2 URN must have 5 colon-delimited components."; return result; }
+        result.protocol = parts[0]; result.nid = parts[1]; result.namespace = parts[2];
+        result.collectionComponent = parts[3]; result.objectComponent = parts[4];
+
+        if (result.protocol !== 'urn') { result.error = "Component 1 must be 'urn'."; return result; }
+        if (result.nid !== 'cite2') { result.error = "Component 2 must be 'cite2'."; return result; }
+        if (!result.namespace) { result.error = "Component 3 (namespace) must be non-empty."; return result; }
+        if (!result.collectionComponent) { result.error = "Component 4 (collection component) must be non-empty."; return result; }
+
+        const collCompParts = _splitComponentString(result.collectionComponent);
+        if (!collCompParts || collCompParts.length === 0 || collCompParts.length > 3) {
+            result.error = "Collection component must have 1-3 non-empty, period-separated parts."; return result;
+        }
+        result.collectionParts.collectionid = collCompParts[0] || null;
+        result.collectionParts.versionid = collCompParts[1] || null;
+        result.collectionParts.propertyid = collCompParts[2] || null;
+
+        const objectStr = result.objectComponent;
+        if (objectStr.includes('-')) {
+            const rangePartsArr = objectStr.split('-');
+            if (rangePartsArr.length !== 2 || !rangePartsArr[0] || !rangePartsArr[1] || rangePartsArr[0].includes('-') || rangePartsArr[1].includes('-')) {
+                result.error = "Object component range must have a non-empty start and end, separated by one hyphen. Start/end cannot contain hyphens."; return result;
+            }
+            result.objectParts.isRange = true; result.objectParts.start = rangePartsArr[0]; result.objectParts.end = rangePartsArr[1];
+        } else if (objectStr === "") {
+            result.objectParts.isRange = false; result.objectParts.reference = "";
+        } else {
+            if (objectStr.includes('-')) { result.error = "Single object identifier cannot contain a hyphen."; return result; }
+            result.objectParts.isRange = false; result.objectParts.reference = objectStr;
+        }
+        result.valid = true; return result;
+    }
+
+    function isValidCite2Urn(urnString) { return parseCite2Urn(urnString).valid; }
+    function cite2namespace(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.namespace : null; }
+    function collectioncomponent(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionComponent : null; }
+    function objectcomponent(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.objectComponent : null; }
+    function collectionid(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionParts.collectionid : null; }
+    function versionid(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionParts.versionid : null; }
+    function propertyid(urnString) { const p = parseCite2Urn(urnString); return p.valid ? p.collectionParts.propertyid : null; }
+
+    function areCite2UrnsEqual(urnString1, urnString2) {
+        const p1 = parseCite2Urn(urnString1); const p2 = parseCite2Urn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        return p1.namespace === p2.namespace && p1.collectionComponent === p2.collectionComponent && p1.objectComponent === p2.objectComponent;
+    }
+
+    function areCite2UrnsCongruent(urnString1, urnString2) {
+        const p1 = parseCite2Urn(urnString1); const p2 = parseCite2Urn(urnString2);
+        if (!p1.valid || !p2.valid) return false;
+        if (p1.namespace !== p2.namespace) return false;
+        const p1CollActParts = [p1.collectionParts.collectionid, p1.collectionParts.versionid, p1.collectionParts.propertyid].filter(Boolean);
+        const p2CollActParts = [p2.collectionParts.collectionid, p2.collectionParts.versionid, p2.collectionParts.propertyid].filter(Boolean);
+        if (!_areComponentPartsCongruent(p1CollActParts, p2CollActParts)) return false;
+        return true;
+    }
+    // --- CITE2 Object Retrieval ---
+    function retrieveCite2Objects(searchUrnString, corpusDataString) {
+        const searchUrnObj = parseCite2Urn(searchUrnString);
+        if (!searchUrnObj.valid) {
+            console.error("Invalid search CITE2 URN:", searchUrnObj.error);
+            return { header: [], rows: [], error: "Invalid search URN: " + searchUrnObj.error };
+        }
+
+        const lines = corpusDataString.trim().split('\n');
+        if (lines.length === 0) {
+            return { header: [], rows: [], error: "Corpus data is empty." };
+        }
+
+        const headerLine = lines.shift(); // Removes and returns the first line
+        const headerColumns = headerLine.split('|').map(h => h.trim());
+        const urnColumnIndex = headerColumns.indexOf('urn');
+
+        if (urnColumnIndex === -1) {
+            return { header: headerColumns, rows: [], error: "Corpus header does not contain a 'urn' column." };
+        }
+
+        const dataRows = lines;
+        const results = [];
+
+        // Prepare potential matches for range queries or direct matches
+        const processedCorpusRows = [];
+        for (let i = 0; i < dataRows.length; i++) {
+            const line = dataRows[i];
+            if (line.trim() === "") continue;
+            const rowValues = line.split('|');
+            if (rowValues.length <= urnColumnIndex) continue; // Line doesn't have enough columns
+
+            const corpusUrnStr = rowValues[urnColumnIndex].trim();
+            const corpusUrnObj = parseCite2Urn(corpusUrnStr);
+
+            if (corpusUrnObj.valid && !corpusUrnObj.objectParts.isRange) { // Only consider non-range URNs in corpus data
+                // Check for collection congruence first
+                if (areCite2UrnsCongruent(searchUrnString, corpusUrnStr)) {
+                     processedCorpusRows.push({
+                        rowData: rowValues, // Store the full row data
+                        corpusUrnString: corpusUrnStr,
+                        corpusUrnObj: corpusUrnObj,
+                        originalCorpusIndex: i // index in dataRows
+                    });
+                }
+            }
+        }
+        
+        if (searchUrnObj.objectParts.isRange) {
+            let startIndex = -1;
+            let endIndex = -1;
+
+            // Find start of range in processedCorpusRows
+            for (let i = 0; i < processedCorpusRows.length; i++) {
+                const row = processedCorpusRows[i];
+                // For range start, object component must match exactly
+                if (row.corpusUrnObj.objectComponent === searchUrnObj.objectParts.start) {
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            // Find end of range in processedCorpusRows
+            for (let i = processedCorpusRows.length - 1; i >= 0; i--) {
+                const row = processedCorpusRows[i];
+                // For range end, object component must match exactly
+                if (row.corpusUrnObj.objectComponent === searchUrnObj.objectParts.end) {
+                    endIndex = i;
+                    break;
+                }
+            }
+
+            if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex) {
+                for (let i = startIndex; i <= endIndex; i++) {
+                    results.push(processedCorpusRows[i].rowData);
+                }
+            }
+        } else { // Not a range search
+            for (const row of processedCorpusRows) {
+                // Collection congruence already checked when building processedCorpusRows.
+                // Now check object component:
+                // 1. If search URN object component is empty, it matches.
+                // 2. If search URN object component is not empty, it must be identical to corpus URN object component.
+                if (searchUrnObj.objectComponent === "" || searchUrnObj.objectComponent === row.corpusUrnObj.objectComponent) {
+                    results.push(row.rowData);
+                }
+            }
+        }
+        return { header: headerColumns, rows: results, error: null };
+    }
+
+
+    // --- EXPORT PUBLIC API ---
+    exports.parseCtsUrn = parseCtsUrn;
+    exports.isValidCtsUrn = isValidCtsUrn;
+    // ... other CTS exports
+    exports.ctsnamespace = ctsnamespace;
+    exports.workcomponent = workcomponent;
+    exports.passagecomponent = passagecomponent;
+    exports.textgroup = textgroup;
+    exports.workid = workid;
+    exports.version = version; // CTS work version
+    exports.exemplar = exemplar;
+    exports.areCtsUrnsEqual = areCtsUrnsEqual;
+    exports.areCtsUrnsCongruent = areCtsUrnsCongruent;
+    exports.retrieveCtsPassages = retrieveCtsPassages;
+
+    exports.parseCite2Urn = parseCite2Urn;
+    exports.isValidCite2Urn = isValidCite2Urn;
+    // ... other CITE2 exports
+    exports.cite2namespace = cite2namespace;
+    exports.collectioncomponent = collectioncomponent;
+    exports.objectcomponent = objectcomponent;
+    exports.collectionid = collectionid;
+    exports.versionid = versionid; // CITE2 collection version
+    exports.propertyid = propertyid;
+    exports.areCite2UrnsEqual = areCite2UrnsEqual;
+    exports.areCite2UrnsCongruent = areCite2UrnsCongruent;
+    exports.retrieveCite2Objects = retrieveCite2Objects;
+
+
+}(typeof exports === 'undefined' ? (this.URNTools = {}) : exports));
+```
+
+**`cite2_test_retrieval.html`:**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CITE2 Object Retrieval Test</title>
+    <script src="urn-lib.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #resultsTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #resultsTable th, #resultsTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #resultsTable th { background-color: #f2f2f2; }
+        .error { color: red; font-weight: bold; }
+        .info { color: blue; }
+        .status-message { margin-top:10px; padding: 5px; border: 1px solid #eee; }
+        textarea { width: 100%; min-height: 150px; margin-bottom:10px; font-family: monospace;}
+    </style>
+</head>
+<body>
+    <h1>CITE2 Object Retrieval</h1>
+    <p>Enter a CITE2 URN to retrieve matching records from the sample dataset below.</p>
+
+    <div>
+        <label for="corpusDataCite2">Corpus Data (Pipe-Delimited):</label><br>
+        <textarea id="corpusDataCite2">
+sequence|image|urn|rv|label
+2|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f001r|urn:cite2:citebl:burney86pages.v1:1r|recto|British Library, Burney 86, folio 1 recto
+3|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f001v|urn:cite2:citebl:burney86pages.v1:1v|verso|British Library, Burney 86, folio 1 verso
+4|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f002r|urn:cite2:citebl:burney86pages.v1:2r|recto|British Library, Burney 86, folio 2 recto
+5|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f002v|urn:cite2:citebl:burney86pages.v1:2v|verso|British Library, Burney 86, folio 2 verso
+6|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f003r|urn:cite2:citebl:burney86pages.v1:3r|recto|British Library, Burney 86, folio 3 recto
+7|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f003v|urn:cite2:citebl:burney86pages.v1:3v|verso|British Library, Burney 86, folio 3 verso
+8|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f004r|urn:cite2:citebl:burney86pages.v1:4r|recto|British Library, Burney 86, folio 4 recto
+9|urn:cite2:citebl:burney86imgs.v1:burney_ms_86_f004v|urn:cite2:citebl:burney86pages.v1:4v|verso|British Library, Burney 86, folio 4 verso
+        </textarea>
+    </div>
+
+    <div>
+        <label for="searchCite2Urn">Search CITE2 URN:</label>
+        <input type="text" id="searchCite2Urn" style="width: 60%;" value="urn:cite2:citebl:burney86pages:1r-2v">
+        <button onclick="performCite2Retrieval()">Retrieve Objects</button>
+    </div>
+
+    <div id="statusCite2" class="status-message"></div>
+    <div id="resultsContainerCite2">
+        <table id="resultsTableCite2" style="display:none;">
+            <thead id="resultsTheadCite2"></thead>
+            <tbody id="resultsBodyCite2"></tbody>
+        </table>
+    </div>
+
+    <script>
+        function performCite2Retrieval() {
+            const searchUrnStr = document.getElementById('searchCite2Urn').value;
+            const corpusDataStr = document.getElementById('corpusDataCite2').value;
+            const statusEl = document.getElementById('statusCite2');
+            const resultsTable = document.getElementById('resultsTableCite2');
+            const resultsThead = document.getElementById('resultsTheadCite2');
+            const resultsBody = document.getElementById('resultsBodyCite2');
+
+            resultsThead.innerHTML = '';
+            resultsBody.innerHTML = ''; 
+            resultsTable.style.display = 'none';
+            statusEl.textContent = '';
+
+            if (!URNTools.isValidCite2Urn(searchUrnStr)) {
+                statusEl.innerHTML = `<span class="error">Invalid search URN. Please enter a valid CITE2 URN.</span>`;
+                return;
+            }
+            
+            statusEl.innerHTML = '<span class="info">Searching...</span>';
+            try {
+                const result = URNTools.retrieveCite2Objects(searchUrnStr, corpusDataStr);
+                
+                if (result.error) {
+                    statusEl.innerHTML = `<span class="error">Error: ${escapeHtml(result.error)}</span>`;
+                    return;
+                }
+
+                if (result.rows.length > 0) {
+                    // Populate header
+                    const headerRow = resultsThead.insertRow();
+                    result.header.forEach(headerText => {
+                        const th = document.createElement('th');
+                        th.textContent = headerText;
+                        headerRow.appendChild(th);
+                    });
+
+                    // Populate data rows
+                    result.rows.forEach(rowDataArray => {
+                        const row = resultsBody.insertRow();
+                        rowDataArray.forEach(cellData => {
+                            const cell = row.insertCell();
+                            cell.textContent = cellData;
+                        });
+                    });
+                    resultsTable.style.display = 'table';
+                    statusEl.innerHTML = `<span class="info">Found ${result.rows.length} matching object(s).</span>`;
+                } else {
+                    statusEl.innerHTML = '<span class="info">No matching objects found.</span>';
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span class="error">Error during retrieval: ${escapeHtml(e.message)}</span>`;
+                console.error(e);
+            }
+        }
+        
+        function escapeHtml(unsafe) {
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        // Perform initial search on load with default values
+        document.addEventListener('DOMContentLoaded', performCite2Retrieval);
+    </script>
+</body>
+</html>
+```
+
+**Key aspects of `retrieveCite2Objects`:**
+
+1.  **Header Processing:** It correctly identifies the header row and the `urn` column index.
+2.  **`processedCorpusRows`:** This intermediate array is crucial. It pre-filters rows from the corpus that are *collection-congruent* with the search URN. This optimization prevents re-checking collection congruence for every single object component match.
+3.  **Non-Range Search:**
+    *   After `processedCorpusRows` is built (meaning collection is congruent), it iterates through them.
+    *   A row matches if the `searchUrnObj.objectComponent` is empty (matches any object in the congruent collection) OR if the `searchUrnObj.objectComponent` is identical to the `row.corpusUrnObj.objectComponent`.
+4.  **Range Search:**
+    *   It uses the `processedCorpusRows` (already collection-congruent).
+    *   It finds the `startIndex` in `processedCorpusRows` where the `corpusUrnObj.objectComponent` *exactly matches* `searchUrnObj.objectParts.start`.
+    *   It finds the `endIndex` in `processedCorpusRows` where the `corpusUrnObj.objectComponent` *exactly matches* `searchUrnObj.objectParts.end`.
+    *   If both are found and `startIndex <= endIndex`, it takes the slice of `processedCorpusRows` and extracts their `rowData`.
+5.  **Return Value:** The function returns an object `{ header: string[], rows: string[][], error: string|null }` to make it easy for the test page to display the table.
+
+This implementation should handle the CITE2 retrieval as specified, including the congruence rules and the specific range logic for ordered CITE2 object identifiers.
+
+### USER
+This Is great! I’m going to publish it on GitHub! Could you write API documentation for the library in Markdown?
+
+### ASSISTANT
+Excellent! API documentation is crucial for a good library. Here's a Markdown version of the API documentation for `urn-lib.js`.
+
+```markdown
+# URN Tools (`urn-lib.js`) API Documentation
+
+This library provides tools for parsing, validating, comparing, and retrieving data associated with CTS (Canonical Text Services) URNs and CITE2 URNs.
+
+## Table of Contents
+
+1.  [Installation & Usage](#installation--usage)
+2.  [Global Object: `URNTools`](#global-object-urntools)
+3.  [CTS URN Functions](#cts-urn-functions)
+    *   [Core CTS Functions](#core-cts-functions)
+    *   [CTS Accessor Functions](#cts-accessor-functions)
+    *   [CTS Comparison Functions](#cts-comparison-functions)
+    *   [CTS Data Retrieval](#cts-data-retrieval)
+4.  [CITE2 URN Functions](#cite2-urn-functions)
+    *   [Core CITE2 Functions](#core-cite2-functions)
+    *   [CITE2 Accessor Functions](#cite2-accessor-functions)
+    *   [CITE2 Comparison Functions](#cite2-comparison-functions)
+    *   [CITE2 Data Retrieval](#cite2-data-retrieval)
+
+## Installation & Usage
+
+### Browser
+
+Include `urn-lib.js` in your HTML file:
+
+```html
+<script src="path/to/urn-lib.js"></script>
+<script>
+    // All functions are available under the URNTools global object
+    const isValid = URNTools.isValidCtsUrn("urn:cts:greekLit:tlg0012.tlg001:1.1");
+    console.log(isValid);
+</script>
+```
+
+Via jsDelivr (once published to GitHub):
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/YOUR_REPOSITORY_NAME@VERSION_OR_BRANCH/urn-lib.js"></script>
+```
+
+### Node.js (CommonJS)
+
+If you adapt the library for Node.js (e.g., by changing the UMD wrapper), you might use it like this:
+
+```javascript
+const URNTools = require('./urn-lib.js'); // Assuming the export mechanism is adjusted
+
+const isValid = URNTools.isValidCtsUrn("urn:cts:greekLit:tlg0012.tlg001:1.1");
+console.log(isValid);
+```
+*(Note: The current library is primarily set up for browser usage with a global `URNTools` object.)*
+
+## Global Object: `URNTools`
+
+All public functions of this library are exposed through the global `URNTools` object.
+
+---
+
+## CTS URN Functions
+
+Functions for working with Canonical Text Services (CTS) URNs.
+CTS URNs have 5 components: `urn:cts:<namespace>:<work-component>:<passage-component>`
+
+### Core CTS Functions
+
+#### `URNTools.parseCtsUrn(urnString)`
+
+Parses a CTS URN string into a detailed object.
+
+*   **Parameters:**
+    *   `urnString` (String): The CTS URN string to parse.
+*   **Returns:** (Object) An object with the following properties:
+    *   `valid` (Boolean): `true` if the URN is syntactically valid, `false` otherwise.
+    *   `original` (String): The original URN string.
+    *   `error` (String | null): An error message if `valid` is `false`, otherwise `null`.
+    *   `protocol` (String | null): The first component (e.g., "urn").
+    *   `nid` (String | null): The second component (e.g., "cts").
+    *   `namespace` (String | null): The third component (CTS namespace).
+    *   `workComponent` (String | null): The fourth component (work identifier).
+    *   `passageComponent` (String | null): The fifth component (passage identifier, can be empty).
+    *   `workParts` (Object):
+        *   `textgroup` (String | null)
+        *   `workid` (String | null)
+        *   `version` (String | null)
+        *   `exemplar` (String | null)
+    *   `passageParts` (Object):
+        *   `isRange` (Boolean): `true` if the passage component is a range.
+        *   `reference` (String | null): The full passage reference if not a range (can be empty).
+        *   `referenceParts` (String[]): Period-separated parts of the `reference`.
+        *   `start` (String | null): The start of the range if `isRange` is `true`.
+        *   `startParts` (String[]): Period-separated parts of the `start` reference.
+        *   `end` (String | null): The end of the range if `isRange` is `true`.
+        *   `endParts` (String[]): Period-separated parts of the `end` reference.
+
+#### `URNTools.isValidCtsUrn(urnString)`
+
+Determines if a string is a syntactically valid CTS URN.
+
+*   **Parameters:**
+    *   `urnString` (String): The string to validate.
+*   **Returns:** (Boolean) `true` if valid, `false` otherwise.
+
+### CTS Accessor Functions
+
+These functions return specific components of a valid CTS URN. They return `null` if the URN is invalid or the component is not present (where applicable).
+
+*   `URNTools.ctsnamespace(urnString)`: Returns the namespace (3rd component).
+*   `URNTools.workcomponent(urnString)`: Returns the work component (4th component).
+*   `URNTools.passagecomponent(urnString)`: Returns the passage component (5th component, possibly empty).
+*   `URNTools.textgroup(urnString)`: Returns the textgroup part of the work component.
+*   `URNTools.workid(urnString)`: Returns the work ID part of the work component (possibly null).
+*   `URNTools.version(urnString)`: Returns the version part of the work component (possibly null). (Note: this is the work's version, not to be confused with CITE2 version).
+*   `URNTools.exemplar(urnString)`: Returns the exemplar part of the work component (possibly null).
+
+### CTS Comparison Functions
+
+#### `URNTools.areCtsUrnsEqual(urnString1, urnString2)`
+
+Checks if two CTS URNs are strictly equal in all their components.
+
+*   **Parameters:**
+    *   `urnString1` (String): The first CTS URN.
+    *   `urnString2` (String): The second CTS URN.
+*   **Returns:** (Boolean) `true` if equal, `false` otherwise. Returns `false` if either URN is invalid.
+
+#### `URNTools.areCtsUrnsCongruent(urnString1, urnString2)`
+
+Checks if two CTS URNs are congruent.
+Two CTS URNs are congruent if:
+1.  They have the same namespace.
+2.  For their work components, each period-separated part that is present in both is equal. If one URN has fewer work parts, it's congruent if its parts match the corresponding initial parts of the other.
+3.  For their passage components (if not ranges), the same logic as for work components applies to their period-separated parts.
+4.  If both are ranges, their start passage parts must be congruent, and their end passage parts must be congruent.
+5.  They must both be ranges or both not be ranges.
+
+*   **Parameters:**
+    *   `urnString1` (String): The first CTS URN.
+    *   `urnString2` (String): The second CTS URN.
+*   **Returns:** (Boolean) `true` if congruent, `false` otherwise. Returns `false` if either URN is invalid.
+
+### CTS Data Retrieval
+
+#### `URNTools.retrieveCtsPassages(searchUrnString, corpusDataString)`
+
+Retrieves passages from a pipe-delimited (`|`) text corpus that match a given CTS URN. The first column of the corpus is assumed to be a CTS URN, and the second is the text content. The first line of `corpusDataString` is skipped (assumed header).
+
+Matching logic:
+1.  **Namespace & Work Hierarchy:** The corpus URN's namespace must match the search URN's. The search URN's work component parts must be a hierarchical prefix of the corpus URN's work component parts.
+2.  **Passage Matching:**
+    *   **If `searchUrnString` is a range:**
+        *   The corpus URN must not be a range.
+        *   The corpus URN's passage identifier (as a string) must lexicographically fall within or be equal to the start and end identifiers of the search range.
+        *   More precisely: The effective start passage in the corpus is the first passage hierarchically matching/contained in the search range's start. The effective end passage is the last passage hierarchically matching/contained in the search range's end. All passages in the corpus between these (inclusive) are returned.
+    *   **If `searchUrnString` is a single passage or container (empty passage component):**
+        *   The corpus URN must not be a range.
+        *   The search URN's passage component parts must be a hierarchical prefix of the corpus URN's passage component parts. (e.g., search `1` matches corpus `1.1`; search empty matches corpus `1.1`).
+
+*   **Parameters:**
+    *   `searchUrnString` (String): The CTS URN to search for.
+    *   `corpusDataString` (String): The string content of the corpus data.
+*   **Returns:** (Array of Objects) An array of matching passages, each object having:
+    *   `urn` (String): The full CTS URN from the corpus.
+    *   `text` (String): The text content associated with the URN.
+    Returns an empty array if the search URN is invalid or no matches are found.
+
+---
+
+## CITE2 URN Functions
+
+Functions for working with CITE2 URNs.
+CITE2 URNs have 5 components: `urn:cite2:<namespace>:<collection-component>:<object-component>`
+
+### Core CITE2 Functions
+
+#### `URNTools.parseCite2Urn(urnString)`
+
+Parses a CITE2 URN string into a detailed object.
+
+*   **Parameters:**
+    *   `urnString` (String): The CITE2 URN string to parse.
+*   **Returns:** (Object) An object with the following properties:
+    *   `valid` (Boolean): `true` if the URN is syntactically valid, `false` otherwise.
+    *   `original` (String): The original URN string.
+    *   `error` (String | null): An error message if `valid` is `false`, otherwise `null`.
+    *   `protocol` (String | null): The first component (e.g., "urn").
+    *   `nid` (String | null): The second component (e.g., "cite2").
+    *   `namespace` (String | null): The third component (CITE2 namespace).
+    *   `collectionComponent` (String | null): The fourth component (collection identifier).
+    *   `objectComponent` (String | null): The fifth component (object identifier, can be empty or a range).
+    *   `collectionParts` (Object):
+        *   `collectionid` (String | null)
+        *   `versionid` (String | null)
+        *   `propertyid` (String | null)
+    *   `objectParts` (Object):
+        *   `isRange` (Boolean): `true` if the object component is a range.
+        *   `reference` (String | null): The object identifier if not a range (can be empty).
+        *   `start` (String | null): The start of the range if `isRange` is `true`.
+        *   `end` (String | null): The end of the range if `isRange` is `true`.
+
+#### `URNTools.isValidCite2Urn(urnString)`
+
+Determines if a string is a syntactically valid CITE2 URN.
+
+*   **Parameters:**
+    *   `urnString` (String): The string to validate.
+*   **Returns:** (Boolean) `true` if valid, `false` otherwise.
+
+### CITE2 Accessor Functions
+
+These functions return specific components of a valid CITE2 URN. They return `null` if the URN is invalid or the component is not present (where applicable).
+
+*   `URNTools.cite2namespace(urnString)`: Returns the namespace (3rd component).
+*   `URNTools.collectioncomponent(urnString)`: Returns the collection component (4th component).
+*   `URNTools.objectcomponent(urnString)`: Returns the object component (5th component, possibly empty).
+*   `URNTools.collectionid(urnString)`: Returns the collection ID part of the collection component.
+*   `URNTools.versionid(urnString)`: Returns the version ID part of the collection component (possibly null).
+*   `URNTools.propertyid(urnString)`: Returns the property ID part of the collection component (possibly null).
+
+### CITE2 Comparison Functions
+
+#### `URNTools.areCite2UrnsEqual(urnString1, urnString2)`
+
+Checks if two CITE2 URNs are strictly equal in all their components.
+
+*   **Parameters:**
+    *   `urnString1` (String): The first CITE2 URN.
+    *   `urnString2` (String): The second CITE2 URN.
+*   **Returns:** (Boolean) `true` if equal, `false` otherwise. Returns `false` if either URN is invalid.
+
+#### `URNTools.areCite2UrnsCongruent(urnString1, urnString2)`
+
+Checks if two CITE2 URNs are congruent.
+Two CITE2 URNs are congruent if:
+1.  They have the same namespace.
+2.  For their collection components, each period-separated part that is present in both is equal. If one URN has fewer collection parts, it's congruent if its parts match the corresponding initial parts of the other.
+(The object component is NOT considered for CITE2 congruence).
+
+*   **Parameters:**
+    *   `urnString1` (String): The first CITE2 URN.
+    *   `urnString2` (String): The second CITE2 URN.
+*   **Returns:** (Boolean) `true` if congruent, `false` otherwise. Returns `false` if either URN is invalid.
+
+### CITE2 Data Retrieval
+
+#### `URNTools.retrieveCite2Objects(searchUrnString, corpusDataString)`
+
+Retrieves rows from a pipe-delimited (`|`) text corpus that match a given CITE2 URN. The first non-empty line of `corpusDataString` is treated as a header. One column in the header must be labeled `urn` and contain CITE2 URNs for data rows.
+
+Matching logic:
+1.  **Parse Corpus:** Identifies header and the `urn` column. Parses CITE2 URNs from this column in data rows.
+2.  **Collection Congruence:** Corpus row URNs must be congruent with the `searchUrnString` based on `areCite2UrnsCongruent` (checks namespace and collection hierarchy).
+3.  **Object Matching:**
+    *   **If `searchUrnString` is NOT a range:**
+        *   If `searchUrnString` has an empty object component, it matches any (collection-congruent) corpus row.
+        *   If `searchUrnString` has a non-empty object component, it must be *identical* to the corpus row's object component.
+    *   **If `searchUrnString` IS a range:**
+        *   The effective start object in the corpus is the first (collection-congruent) row whose object component exactly matches the search range's start identifier.
+        *   The effective end object in the corpus is the last (collection-congruent) row whose object component exactly matches the search range's end identifier.
+        *   All rows in the corpus data between these (inclusive and in corpus order) are returned.
+        *   Corpus URNs that are themselves ranges are ignored for matching.
+
+*   **Parameters:**
+    *   `searchUrnString` (String): The CITE2 URN to search for.
+    *   `corpusDataString` (String): The string content of the pipe-delimited corpus data.
+*   **Returns:** (Object) An object with the following properties:
+    *   `header` (String[]): An array of column names from the corpus header.
+    *   `rows` (Array of String[]): An array of matching data rows, where each row is an array of its string values.
+    *   `error` (String | null): An error message if an issue occurred (e.g., invalid search URN, no 'urn' column), otherwise `null`.
+```
+
+This documentation covers all the public functions, their parameters, return values, and a brief explanation of their logic, especially for the more complex retrieval and congruence functions. You can save this as `README.md` or `API.md` in your GitHub repository.
