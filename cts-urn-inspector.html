@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CTS URN Syntax Test</title>
+    <script src="urn-lib.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .container { display: flex; gap: 20px; }
+        .urn-input, .urn-analysis { flex: 1; padding: 10px; border: 1px solid #ccc; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .error { color: red; }
+        .success { color: green; }
+        .comparison { margin-top: 20px; padding: 10px; border: 1px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>CTS URN Syntax and Component Analyzer</h1>
+    <p>Enter two CTS URNs to analyze their syntax, components, equality, and congruence.</p>
+    
+    <div class="container">
+        <div class="urn-input">
+            <label for="ctsUrn1">CTS URN 1:</label><br>
+            <input type="text" id="ctsUrn1" style="width: 90%;" value="urn:cts:hmt:tlg0012.tlg001.msA.normalized:1.1-1.7">
+        </div>
+        <div class="urn-input">
+            <label for="ctsUrn2">CTS URN 2:</label><br>
+            <input type="text" id="ctsUrn2" style="width: 90%;" value="urn:cts:hmt:tlg0012.tlg001:1.1">
+        </div>
+    </div>
+    <button onclick="analyzeCtsUrns()" style="margin-top:10px;">Analyze CTS URNs</button>
+
+    <div class="container" style="margin-top:20px;">
+        <div class="urn-analysis" id="analysis1"></div>
+        <div class="urn-analysis" id="analysis2"></div>
+    </div>
+
+    <div class="comparison" id="comparisonResults" style="display:none;">
+        <h2>Comparison Results</h2>
+        <p id="equalityResult"></p>
+        <p id="congruenceResult"></p>
+    </div>
+
+    <script>
+        function displayCtsAnalysis(urnString, targetElementId) {
+            const parsed = URNTools.parseCtsUrn(urnString);
+            const el = document.getElementById(targetElementId);
+            let html = `<h3>Analysis for: ${escapeHtml(urnString)}</h3>`;
+
+            if (parsed.valid) {
+                html += `<p class="success"><strong>Valid CTS URN</strong></p>`;
+                html += `<table>
+                            <tr><th>Component</th><th>Value</th></tr>
+                            <tr><td>Namespace</td><td>${escapeHtml(parsed.namespace)}</td></tr>
+                            <tr><td>Textgroup</td><td>${escapeHtml(parsed.workParts.textgroup || 'N/A')}</td></tr>
+                            <tr><td>Work ID</td><td>${escapeHtml(parsed.workParts.workid || 'N/A')}</td></tr>
+                            <tr><td>Version</td><td>${escapeHtml(parsed.workParts.version || 'N/A')}</td></tr>
+                            <tr><td>Exemplar</td><td>${escapeHtml(parsed.workParts.exemplar || 'N/A')}</td></tr>
+                            <tr><td>Passage Component</td><td>${escapeHtml(parsed.passageComponent)}</td></tr>
+                            <tr><td>Passage Type</td><td>`;
+                if (parsed.passageParts.isRange) {
+                    html += `Range (Start: ${escapeHtml(parsed.passageParts.start)}, End: ${escapeHtml(parsed.passageParts.end)})`;
+                } else if (parsed.passageParts.reference === "") {
+                    html += `Empty`;
+                } else {
+                    html += `Single Reference`;
+                }
+                html += `</td></tr></table>`;
+            } else {
+                html += `<p class="error"><strong>Invalid CTS URN</strong></p>`;
+                html += `<p class="error">Error: ${escapeHtml(parsed.error)}</p>`;
+            }
+            el.innerHTML = html;
+            return parsed.valid;
+        }
+
+        function analyzeCtsUrns() {
+            const urn1Str = document.getElementById('ctsUrn1').value;
+            const urn2Str = document.getElementById('ctsUrn2').value;
+
+            const valid1 = displayCtsAnalysis(urn1Str, 'analysis1');
+            const valid2 = displayCtsAnalysis(urn2Str, 'analysis2');
+
+            const comparisonDiv = document.getElementById('comparisonResults');
+            if (valid1 && valid2) {
+                const isEqual = URNTools.areCtsUrnsEqual(urn1Str, urn2Str);
+                const isCongruent = URNTools.areCtsUrnsCongruent(urn1Str, urn2Str);
+                document.getElementById('equalityResult').textContent = `URNs are Equal: ${isEqual ? 'Yes' : 'No'}`;
+                document.getElementById('congruenceResult').textContent = `URNs are Congruent: ${isCongruent ? 'Yes' : 'No'}`;
+                comparisonDiv.style.display = 'block';
+            } else {
+                comparisonDiv.style.display = 'none';
+                document.getElementById('equalityResult').textContent = 'Cannot compare: one or both URNs are invalid.';
+                document.getElementById('congruenceResult').textContent = '';
+                 if (!valid1 || !valid2) {
+                    comparisonDiv.style.display = 'block'; // Show invalid message
+                 }
+            }
+        }
+
+        function escapeHtml(unsafe) {
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        // Initial analysis on load
+        analyzeCtsUrns();
+    </script>
+</body>
+</html>
