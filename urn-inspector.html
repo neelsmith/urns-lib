@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CTS URN Tester</title>
+    <!-- For local testing, use: -->
+    <script src="urns-lib.js"></script>
+    <!-- When deployed, you might use a jsDelivr link, e.g.: -->
+    <!-- <script src="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/YOUR_REPO@VERSION/cts-urn.js"></script> -->
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        h1, h2 { color: #333; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom:20px;}
+        .urn-input-area { flex: 1; min-width: 300px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f8f8f8; }
+        .results-area { padding: 15px; border: 1px solid #ccc; border-radius: 5px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .error { color: #d9534f; font-weight: bold; }
+        .valid { color: #5cb85c; font-weight: bold; }
+        .output-cell { word-break: break-all; }
+        .urn-original {font-family: monospace; font-size: 0.9em; background-color: #eee; padding: 2px 4px; border-radius: 3px; display: inline-block; margin-bottom: 5px;}
+    </style>
+</head>
+<body>
+    <h1>CTS URN Tester</h1>
+
+    <div class="container">
+        <div class="urn-input-area">
+            <h2>URN 1</h2>
+            <input type="text" id="urn1Input" value="urn:cts:hmt:tlg0012.tlg001.msA.normalized:1.1-1.7">
+            <div id="urn1Details">
+                <!-- Details for URN 1 will be populated here -->
+            </div>
+        </div>
+        <div class="urn-input-area">
+            <h2>URN 2</h2>
+            <input type="text" id="urn2Input" value="urn:cts:hmt:tlg0012.tlg001:1.1">
+            <div id="urn2Details">
+                <!-- Details for URN 2 will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <button onclick="processURNs()">Process URNs</button>
+
+    <div class="results-area" style="margin-top:20px;">
+        <h2>Comparison Results</h2>
+        <p><strong>Equal:</strong> <span id="equalityResult">-</span></p>
+        <p><strong>Congruent:</strong> <span id="congruenceResult">-</span></p>
+    </div>
+
+    <script>
+        function escapeHtml(unsafe) {
+            if (unsafe === null || typeof unsafe === 'undefined') return '';
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function displayUrnDetails(urnString, detailsContainerId) {
+            const container = document.getElementById(detailsContainerId);
+            const details = CTSURN.getFullCtsUrnDetails(urnString);
+
+            let html = `<p><span class="urn-original">${escapeHtml(details.original)}</span></p>`;
+            if (!details.isValid) {
+                html += `<p><strong>Valid:</strong> <span class="error">No</span></p>`;
+                container.innerHTML = html;
+                return;
+            }
+
+            html += `<p><strong>Valid:</strong> <span class="valid">Yes</span></p>`;
+            html += `<table>
+                        <tr><th>Component</th><th>Value</th></tr>
+                        <tr><td>Namespace</td><td class="output-cell">${escapeHtml(details.namespace)}</td></tr>
+                        <tr><td>Text Group</td><td class="output-cell">${escapeHtml(details.textgroup)}</td></tr>
+                        <tr><td>Work ID</td><td class="output-cell">${escapeHtml(details.workid)}</td></tr>
+                        <tr><td>Version</td><td class="output-cell">${escapeHtml(details.version)}</td></tr>
+                        <tr><td>Exemplar</td><td class="output-cell">${escapeHtml(details.exemplar)}</td></tr>
+                        <tr><td>Passage Component</td><td class="output-cell">${escapeHtml(details.passageComponent)}</td></tr>
+                     </table>`;
+            
+            if (details.isRange) {
+                html += `<p><strong>Passage Type:</strong> Range</p>`;
+                html += `<p style="margin-left: 10px;">Start: <span class="output-cell">${escapeHtml(details.rangeStart)}</span><br>End: <span class="output-cell">${escapeHtml(details.rangeEnd)}</span></p>`;
+            } else if (details.passageType === 'single') {
+                html += `<p><strong>Passage Type:</strong> Single Reference</p>`;
+            } else if (details.passageType === 'empty') {
+                 html += `<p><strong>Passage Type:</strong> Empty</p>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function processURNs() {
+            const urn1String = document.getElementById('urn1Input').value;
+            const urn2String = document.getElementById('urn2Input').value;
+
+            displayUrnDetails(urn1String, 'urn1Details');
+            displayUrnDetails(urn2String, 'urn2Details');
+
+            // Only perform comparison if both URNs are valid syntactically
+            const details1 = CTSURN.getFullCtsUrnDetails(urn1String);
+            const details2 = CTSURN.getFullCtsUrnDetails(urn2String);
+
+            if (details1.isValid && details2.isValid) {
+                const isEqual = CTSURN.areEqualCtsUrns(urn1String, urn2String);
+                const areCongruent = CTSURN.areCongruentCtsUrns(urn1String, urn2String);
+
+                document.getElementById('equalityResult').textContent = isEqual ? 'Yes' : 'No';
+                document.getElementById('equalityResult').className = isEqual ? 'valid' : 'error';
+                document.getElementById('congruenceResult').textContent = areCongruent ? 'Yes' : 'No';
+                document.getElementById('congruenceResult').className = areCongruent ? 'valid' : 'error';
+            } else {
+                document.getElementById('equalityResult').textContent = 'N/A (one or both URNs invalid)';
+                document.getElementById('equalityResult').className = '';
+                document.getElementById('congruenceResult').textContent = 'N/A (one or both URNs invalid)';
+                document.getElementById('congruenceResult').className = '';
+            }
+        }
+
+        // Initial processing on load for default values
+        window.onload = processURNs;
+    </script>
+</body>
+</html>
